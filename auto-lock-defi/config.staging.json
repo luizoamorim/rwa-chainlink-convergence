@@ -1,0 +1,7 @@
+{
+  "chainSelector": "16015286601757825753", 
+  "forwarderAddress": "0x15fC6ae953E024d975e77382eEeC56A9101f9F88",
+  "tokenizationContract": "0xb7D76381C31070e80a2342184Adc66da009538ff",
+  "worldIdAppId": "app_staging_123...",
+  "detranApiMock": "http://localhost:8080"
+}

@@ -1,0 +1,52 @@
+# --- Identidade e Segredos ---
+.env
+.env.*
+!.env.example
+secrets.json
+
+# --- Go (Chainlink CRE & Mocks) ---
+bin/
+main
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+# CRE especifico
+auto-lock-defi/dist/
+*.wasm
+
+# --- Solidity / Foundry ---
+out/
+cache/
+broadcast/
+artifacts/
+lib/
+# Se você estiver usando submodules para as libs do Foundry, 
+# ignore apenas se quiser forçar o download limpo por outros.
+
+# --- Node.js / Frontend (thirdweb) ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.next/
+dist/
+build/
+.vercel
+
+# --- IDEs e Sistema ---
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# --- Logs de Simulação ---
+*.log
+simulation_results.json

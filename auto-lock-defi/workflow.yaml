@@ -1,0 +1,29 @@
+# ==========================================================================
+# CRE WORKFLOW SETTINGS FILE
+# ==========================================================================
+
+# Target for development and Hackathon (Tenderly Virtual TestNet + Mocks)
+staging-settings:
+  user-workflow:
+    workflow-name: "auto-lock-defi-staging"
+    # Required Capabilities for the RWA workflow to function
+    capabilities:
+      - "networking:http@1.0.0-beta.0"      # For DETRAN/FIPE Oracle Fetch
+      - "blockchain:evm@1.0.0"             # For Tenderly Minting
+  workflow-artifacts:
+    workflow-path: "."
+    config-path: "./config.staging.json"
+    secrets-path: "../secrets.yaml"
+
+# ==========================================================================
+# Target for official production deployment on the Chainlink DON
+production-settings:
+  user-workflow:
+    workflow-name: "auto-lock-defi-production"
+    capabilities:
+      - "networking:http@1.0.0-beta.0"
+      - "blockchain:evm@1.0.0"
+  workflow-artifacts:
+    workflow-path: "."
+    config-path: "./config.production.json"
+    secrets-path: "../secrets.yaml"

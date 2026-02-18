@@ -1,0 +1,11 @@
+[profile.default]
+src = "contracts/evm/src"
+out = "contracts/evm/out"
+test = "contracts/evm/test"
+script = "contracts/evm/script"
+libs = ["lib"] # This tells it to look for OZ in the root's lib folder
+
+remappings = [
+    "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+    "forge-std/=lib/openzeppelin-contracts/lib/forge-std/src/"
+]

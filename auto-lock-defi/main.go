@@ -6,90 +6,176 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
+	protos "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
+	"github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http"
 	"github.com/smartcontractkit/cre-sdk-go/cre"
 	"github.com/smartcontractkit/cre-sdk-go/cre/wasm"
+
+	// 🔥 IMPORT DO BINDING GERADO
+	"auto-lock-defi/contracts/evm/src/generated/vehicle_token_consumer"
 )
 
-// Config defines the static parameters loaded from the config.staging.json file.
 type Config struct {
 	DetranApiUrl         string `json:"detranApiMock"`
 	ChainSelector        string `json:"chainSelector"`
 	TokenizationContract string `json:"tokenizationContract"`
+	WorldIDAppID         string `json:"worldIdAppId"`
 }
 
-// TokenizationPayload defines the dynamic data structure sent by the DApp.
+type WorldIDProof struct {
+	NullifierHash     string `json:"nullifier_hash"`
+	MerkleRoot        string `json:"merkle_root"`
+	Proof             string `json:"proof"`
+	VerificationLevel string `json:"verification_level"`
+}
+
 type TokenizationPayload struct {
-	Plate        string `json:"plate"`
-	Renavam      string `json:"renavam"`
-	WorldIDProof string `json:"world_id_proof"`
+	Plate   string       `json:"plate"`
+	Renavam string       `json:"renavam"`
+	Wallet  string       `json:"wallet"`
+	Proof   WorldIDProof `json:"proof"`
 }
 
-// ExecutionResult represents the final response payload for the DApp.
 type ExecutionResult struct {
 	TxHash string `json:"txHash"`
 	Status string `json:"status"`
 }
 
-// onTokenizationRequest orchestrates the RWA verification and tokenization logic.
-func onTokenizationRequest(config *Config, runtime cre.Runtime, trigger *http.Payload) (*ExecutionResult, error) {
-	logger := runtime.Logger()
+func verifyWorldID(cfg *Config, runtime cre.Runtime, proof WorldIDProof) error {
 
-	// 1. Input Parsing
+	secretPromise := runtime.GetSecret(&protos.SecretRequest{
+		Id: "WORLD_ID_API_KEY",
+	})
+
+	secret, err := secretPromise.Await()
+	if err != nil {
+		return err
+	}
+
+	apiKey := secret.Value
+
+	payload := map[string]interface{}{
+		"nullifier_hash":     proof.NullifierHash,
+		"merkle_root":        proof.MerkleRoot,
+		"proof":              proof.Proof,
+		"verification_level": proof.VerificationLevel,
+		"action":             "tokenizevehicle",
+	}
+
+	body, _ := json.Marshal(payload)
+
+	client := &http.Client{}
+
+	_, err = http.SendRequest(
+		cfg,
+		runtime,
+		client,
+		func(cfg *Config, log *slog.Logger, requester *http.SendRequester) ([]byte, error) {
+
+			req := &http.Request{
+				Url:    fmt.Sprintf("https://developer.worldcoin.org/api/v2/verify/%s", cfg.WorldIDAppID),
+				Method: "POST",
+				Headers: map[string]string{
+					"Content-Type":  "application/json",
+					"Authorization": "Bearer " + apiKey,
+				},
+				Body: body,
+			}
+
+			resp, err := requester.SendRequest(req).Await()
+			if err != nil {
+				return nil, err
+			}
+
+			return resp.Body, nil
+		},
+		cre.ConsensusIdenticalAggregation[[]byte](),
+	).Await()
+
+	return err
+}
+
+func writeReportOnChain(
+	config *Config,
+	runtime cre.Runtime,
+	payload TokenizationPayload,
+) (string, error) {
+
+	selector, err := evm.ChainSelectorFromName(config.ChainSelector)
+	if err != nil {
+		return "", err
+	}
+
+	evmClient := &evm.Client{
+		ChainSelector: selector,
+	}
+
+	consumerAddress := common.HexToAddress(config.TokenizationContract)
+
+	consumerContract, err := vehicle_token_consumer.NewVehicleTokenConsumer(
+		evmClient,
+		consumerAddress,
+		nil,
+	)
+	if err != nil {
+		return "", err
+	}
+
+	gasConfig := &evm.GasConfig{
+		GasLimit: 500000,
+	}
+
+	writePromise := consumerContract.WriteReportFromVehicleReport(
+		runtime,
+		vehicle_token_consumer.VehicleReport{
+			Owner:   common.HexToAddress(payload.Wallet),
+			Plate:   payload.Plate,
+			Renavam: payload.Renavam,
+			Value:   big.NewInt(45000),
+			Uri:     "https://metadata.example/vehicle.json",
+		},
+		gasConfig,
+	)
+
+	resp, err := writePromise.Await()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("0x%x", resp.TxHash), nil
+}
+func onTokenizationRequest(config *Config, runtime cre.Runtime, trigger *http.Payload) (*ExecutionResult, error) {
+
 	var payload TokenizationPayload
 	if err := json.Unmarshal(trigger.Input, &payload); err != nil {
-		return nil, fmt.Errorf("failed to parse input: %w", err)
+		return nil, err
 	}
 
-	logger.Info("Starting RWA Verification", "plate", payload.Plate)
+	if err := verifyWorldID(config, runtime, payload.Proof); err != nil {
+		return nil, err
+	}
 
-	// 2. [BOUNTY: WORLD ID] - Identity Verification
-	// In a production environment, this would involve a call to the World ID Verify API.
-	logger.Info("Human Identity Verified via World ID", "bounty", "World ID")
-
-	// 3. [BOUNTY: ORACLES] - Vehicle Data Fetch & Consensus (DETRAN)
-	client := &http.Client{}
-	_, err := http.SendRequest(config, runtime, client, func(cfg *Config, log *slog.Logger, requester *http.SendRequester) ([]byte, error) {
-		req := &http.Request{
-			Url:    fmt.Sprintf("%s/detran/%s", cfg.DetranApiUrl, payload.Plate),
-			Method: "GET",
-		}
-		resp, err := requester.SendRequest(req).Await()
-		if err != nil {
-			return nil, err
-		}
-		return resp.Body, nil
-	}, cre.ConsensusIdenticalAggregation[[]byte]()).Await()
-
+	txHash, err := writeReportOnChain(config, runtime, payload)
 	if err != nil {
-		return nil, fmt.Errorf("DON/DETRAN validation failed: %w", err)
+		return nil, err
 	}
-
-	logger.Info("Vehicle data successfully validated via DON", "status", "CLEAR")
-
-	// 4. [BOUNTY: TENDERLY] - On-Chain Tokenization Simulation
-	// To maintain compatibility with the v1.3.0 SDK simulation environment while
-	// the ConsensusAggregation interface for chain writes stabilizes, 
-	// we simulate the final transaction result.
-	
-	// Deterministic Fake Hash for demonstration purposes
-	fakeTxHash := "0x" + payload.Plate + "bf" + payload.Renavam[:4] + "776c221255def"
-	
-	logger.Info("RWA Successfully Tokenized!", 
-		"contract", config.TokenizationContract, 
-		"txHash", fakeTxHash)
 
 	return &ExecutionResult{
-		TxHash: fakeTxHash,
+		TxHash: txHash,
 		Status: "SUCCESS",
 	}, nil
 }
 
-// InitWorkflow registers the HTTP trigger and the handler.
 func InitWorkflow(config *Config, logger *slog.Logger, secretsProvider cre.SecretsProvider) (cre.Workflow[*Config], error) {
 	return cre.Workflow[*Config]{
-		cre.Handler(http.Trigger(&http.Config{}), onTokenizationRequest),
+		cre.Handler(
+			http.Trigger(&http.Config{}),
+			onTokenizationRequest,
+		),
 	}, nil
 }
 

@@ -7,36 +7,150 @@ GREEN  := \033[0;32m
 RED    := \033[0;31m
 NC     := \033[0m # No Color
 
-.PHONY: build-contracts deploy simulate-rwa test-env
+.PHONY: build-contracts deploy simulate-rwa test-env worker detran listener frontend up down
 
-# Main command
+# --------------------------------------
+# MAIN
+# --------------------------------------
+
 test-env: deploy simulate-rwa
+
+# --------------------------------------
+# BUILD
+# --------------------------------------
 
 build-contracts:
 	@echo "🛠️  Compiling Smart Contracts..."
 	@forge build
 
+# --------------------------------------
+# DEPLOY (NFT + Consumer + Ownership)
+# --------------------------------------
+
 deploy: build-contracts
-	@echo "🚀 Deploying to Tenderly Virtual TestNet..."
-	@$(eval CONTRACT_ADDRESS=$(shell forge script contracts/evm/script/DeployVehicleNFT.s.sol:DeployVehicleNFT --rpc-url $(TENDERLY_RPC_URL) --broadcast --non-interactive | grep "Deployed to:" | awk '{print $$3}'))
-	@echo "✅ Contract deployed at: $(GREEN)$(CONTRACT_ADDRESS)$(NC)"
-	@echo "📝 Updating auto-lock-defi/config.staging.json..."
-	@if [ "$(shell uname)" = "Darwin" ]; then \
-		sed -i '' 's/"tokenizationContract": ".*"/"tokenizationContract": "$(CONTRACT_ADDRESS)"/' auto-lock-defi/config.staging.json; \
-	else \
-		sed -i 's/"tokenizationContract": ".*"/"tokenizationContract": "$(CONTRACT_ADDRESS)"/' auto-lock-defi/config.staging.json; \
-	fi
+	@echo "🚀 Deploying VehicleNFT..."
+	@forge script contracts/evm/script/DeployVehicleNFT.s.sol:DeployVehicleNFT \
+	--rpc-url $(TENDERLY_RPC_URL) \
+	--private-key $(PRIVATE_KEY) \
+	--broadcast --non-interactive
+
+	@NFT_ADDRESS=$$(jq -r '.transactions[0].contractAddress' \
+		broadcast/DeployVehicleNFT.s.sol/11155111/run-latest.json); \
+	if [ -z "$$NFT_ADDRESS" ] || [ "$$NFT_ADDRESS" = "null" ]; then \
+		echo "$(RED)❌ Failed to capture NFT address$(NC)"; \
+		exit 1; \
+	fi; \
+	echo "✅ NFT deployed at: $(GREEN)$$NFT_ADDRESS$(NC)"; \
+	echo "NFT_ADDRESS=$$NFT_ADDRESS" > .deploy.env
+
+	@echo "🚀 Deploying VehicleTokenConsumer..."
+	@source .deploy.env; \
+	NFT_ADDRESS=$$NFT_ADDRESS forge script contracts/evm/script/DeployVehicleConsumer.s.sol:DeployVehicleConsumer \
+		--rpc-url $(TENDERLY_RPC_URL) \
+		--private-key $(PRIVATE_KEY) \
+		--broadcast --non-interactive
+
+	@CONSUMER_ADDRESS=$$(jq -r '.transactions[0].contractAddress' \
+		broadcast/DeployVehicleConsumer.s.sol/11155111/run-latest.json); \
+	if [ -z "$$CONSUMER_ADDRESS" ] || [ "$$CONSUMER_ADDRESS" = "null" ]; then \
+		echo "$(RED)❌ Failed to capture Consumer address$(NC)"; \
+		exit 1; \
+	fi; \
+	echo "✅ Consumer deployed at: $(GREEN)$$CONSUMER_ADDRESS$(NC)"; \
+	echo "CONSUMER_ADDRESS=$$CONSUMER_ADDRESS" >> .deploy.env
+
+	@echo "🔄 Transferring NFT ownership..."
+	@source .deploy.env; \
+	NFT_ADDRESS=$$NFT_ADDRESS CONSUMER_ADDRESS=$$CONSUMER_ADDRESS \
+	forge script contracts/evm/script/TransferOwnership.s.sol:TransferOwnership \
+		--rpc-url $(TENDERLY_RPC_URL) \
+		--private-key $(PRIVATE_KEY) \
+		--broadcast --non-interactive
+
+	@echo "📝 Updating config..."
+	@source .deploy.env; \
+	sed -i '' "s/\"tokenizationContract\": \".*\"/\"tokenizationContract\": \"$$CONSUMER_ADDRESS\"/" auto-lock-defi/config.staging.json
+
+	@echo "$(GREEN)🎉 Deploy completed successfully!$(NC)"
+
+	@$(MAKE) export-abi
+	@echo "$(GREEN)🎉 ABI exported successfully!$(NC)"
+
+	@$(MAKE) generate-bindings
+	@echo "$(GREEN)🎉 Bindings generated successfully!$(NC)"
+
+	
+# --------------------------------------
+# EXPORT ABI
+# --------------------------------------
+
+export-abi:
+	@echo "📦 Exporting VehicleTokenConsumer ABI..."
+	@mkdir -p auto-lock-defi/contracts/evm/src/abi
+	@jq '.abi' contracts/evm/out/VehicleTokenConsumer.sol/VehicleTokenConsumer.json \
+	> auto-lock-defi/contracts/evm/src/abi/VehicleTokenConsumer.abi
+	@echo "✅ ABI exported successfully!"
+
+# --------------------------------------
+# GENERATE CRE BINDINGS
+# --------------------------------------
+
+generate-bindings:
+	@echo "⚙️ Generating CRE bindings..."
+	@cd auto-lock-defi && cre generate-bindings evm
+	@cd auto-lock-defi && go mod tidy
+	@echo "✅ Bindings generated."
+
+# --------------------------------------
+# SIMULATION (CRE)
+# --------------------------------------
 
 simulate-rwa:
 	@echo "🌐 Starting Mock DETRAN Backend..."
 	@go run mocks/main.go & sleep 3
-	@echo "🧪 Running Chainlink CRE Simulation..."
-	@if cre workflow simulate auto-lock-defi --target staging-settings --http-payload '{"plate":"ABC1234", "renavam":"123456789", "world_id_proof":"valid_proof_here"}' --trigger-index 0 --non-interactive; then \
-		echo "$(GREEN)✅ SUCCESS: RWA Workflow validated on-chain!$(NC)"; \
+
+	@echo "🧪 Running Chainlink CRE Simulation with broadcast..."
+	@if cre workflow simulate auto-lock-defi --target staging-settings -e .env \
+	--broadcast \
+	--http-payload '{"plate":"ABC1234","renavam":"123456789","wallet":"0x0000000000000000000000000000000000000001","proof":{"nullifier_hash":"0xabc","merkle_root":"0xdef","proof":"0xghi","verification_level":"device"}}' \
+	--trigger-index 0 --non-interactive; then \
+		echo "$(GREEN)✅ SUCCESS: RWA Workflow validated!$(NC)"; \
 	else \
 		echo "$(RED)❌ ERROR: Simulation failed. Check logs above.$(NC)"; \
 		pkill -f "go run mocks/main.go" || true; \
 		exit 1; \
 	fi
+
 	@echo "🧹 Cleaning up processes..."
 	@pkill -f "go run mocks/main.go" || true
+
+# --------------------------------------
+# INDIVIDUAL SERVICES
+# --------------------------------------
+
+worker:
+	cd worker && go run .
+
+detran:
+	cd detran-mock && go run .
+
+listener:
+	cd event-listener && cargo run
+
+frontend:
+	cd frontend && npm run dev
+
+# --------------------------------------
+# FULL STACK
+# --------------------------------------
+
+up:
+	@echo "🚀 Starting full stack..."
+	@make -j4 worker detran listener frontend
+
+down:
+	@echo "🛑 Stopping services..."
+	@pkill -f worker || true
+	@pkill -f detran-mock || true
+	@pkill -f event-listener || true
+	@pkill -f next || true

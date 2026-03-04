@@ -1,8 +1,22 @@
 # ==========================================================================
-# CRE WORKFLOW SETTINGS FILE
+# AUTOLOCK DEFI — CRE WORKFLOW
 # ==========================================================================
 
-# Target for development and Hackathon (Tenderly Virtual TestNet + Mocks)
+name: auto-lock-defi
+
+triggers:
+  - id: http-trigger
+    type: http
+    version: 1.0.0-alpha
+
+targets:
+  - id: evm-target
+    type: evm
+    version: 1.0.0
+
+# ==========================================================================
+# STAGING (Tenderly Virtual TestNet)
+# ==========================================================================
 staging-settings:
   user-workflow:
     workflow-name: "auto-lock-defi-staging"
@@ -16,7 +30,8 @@ staging-settings:
     secrets-path: "../secrets.yaml"
 
 # ==========================================================================
-# Target for official production deployment on the Chainlink DON
+# PRODUCTION (Future DON Deployment)
+# ==========================================================================
 production-settings:
   user-workflow:
     workflow-name: "auto-lock-defi-production"

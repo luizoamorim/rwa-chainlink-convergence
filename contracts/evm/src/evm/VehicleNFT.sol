@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721URIStorage.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -7,13 +7,18 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract VehicleNFT is ERC721URIStorage, Ownable {
     uint256 private _nextTokenId;
 
-    event VehicleTokenized(uint256 indexed tokenId, string plate, string renavam, uint256 value);
+    event VehicleTokenized(
+        uint256 indexed tokenId,
+        string plate,
+        string renavam,
+        uint256 value
+    );
 
     constructor() ERC721("AutoLock RWA", "ALRWA") Ownable(msg.sender) {}
- 
+
     /**
-     * @dev Mint a new Vehicle NFT. 
-     * In production, only the Chainlink Forwarder or the Workflow owner should call this.
+     * @notice Mint a new Vehicle NFT.
+     * @dev Only the contract owner (VehicleTokenConsumer) can mint.
      */
     function mintVehicle(
         address to,
@@ -21,8 +26,9 @@ contract VehicleNFT is ERC721URIStorage, Ownable {
         string memory renavam,
         uint256 value,
         string memory uri
-    ) public onlyOwner returns (uint256) {
+    ) external onlyOwner returns (uint256) {
         uint256 tokenId = _nextTokenId++;
+
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
 

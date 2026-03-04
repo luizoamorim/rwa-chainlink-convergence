@@ -1,16 +1,16 @@
 'use client';
 
-import { IDKitRequestWidget, selfieCheckLegacy, type RpContext, type IDKitResult } from '@worldcoin/idkit';
+import { IDKitRequestWidget, type IDKitResult, type RpContext, selfieCheckLegacy } from '@worldcoin/idkit';
 import { useEffect, useState } from 'react';
 
 const APP_ID = process.env.NEXT_PUBLIC_WLD_APP_ID as `app_${string}`;
 const RP_ID = process.env.NEXT_PUBLIC_WLD_RP_ID!;
-const ACTION = 'tokenizevehicle';
+const ACTION = process.env.NEXT_PUBLIC_WLD_ACTION!;
 
 type Props = {
 	plate: string;
 	renavam: string;
-	wallet?: string;
+	wallet: string;
 };
 
 export default function VerifyButton({ plate, renavam, wallet }: Props) {
@@ -53,25 +53,19 @@ export default function VerifyButton({ plate, renavam, wallet }: Props) {
 				app_id={APP_ID}
 				action={ACTION}
 				rp_context={rpContext}
+				environment="staging" // ou production se for o caso
 				allow_legacy_proofs={true}
 				preset={selfieCheckLegacy({ signal: 'vehicle-tokenization' })}
 				handleVerify={async (result: IDKitResult) => {
-					// 1️⃣ Verify proof server-side
-					const verifyResponse = await fetch('/api/verify-proof', {
-						method: 'POST',
-						headers: { 'content-type': 'application/json' },
-						body: JSON.stringify({
-							rp_id: RP_ID,
-							idkitResponse: result,
-						}),
-					});
+					// NÃO verificar aqui!
+					// Apenas retornar sucesso para o widget continuar
+					return;
+				}}
+				onSuccess={async (result: IDKitResult) => {
+					console.log('Proof generated:', result);
 
-					if (!verifyResponse.ok) {
-						throw new Error('World ID verification failed');
-					}
-
-					// 2️⃣ Trigger tokenization
-					const tokenizeResponse = await fetch('/api/tokenize', {
+					// Enviar tudo direto para seu backend
+					await fetch('/api/tokenize', {
 						method: 'POST',
 						headers: { 'content-type': 'application/json' },
 						body: JSON.stringify({
@@ -81,11 +75,9 @@ export default function VerifyButton({ plate, renavam, wallet }: Props) {
 							proof: result,
 						}),
 					});
-
-					if (!tokenizeResponse.ok) {
-						const error = await tokenizeResponse.text();
-						throw new Error(error);
-					}
+				}}
+				onError={(errorCode) => {
+					console.error('IDKit error:', errorCode);
 				}}
 			/>
 		</>

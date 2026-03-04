@@ -86,9 +86,8 @@ export default function TokenizationForm() {
 					/>
 				</div>
 
-				{/* Verify */}
 				<div className="mt-10">
-					<VerifyButton plate={plate} renavam={renavam} wallet={address} />
+					<VerifyButton plate={plate} renavam={renavam} wallet={address!} />
 				</div>
 
 				{address && <p className="text-green-600 text-center text-sm mt-6">● Wallet Connected</p>}

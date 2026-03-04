@@ -9,30 +9,57 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
-	protos "github.com/smartcontractkit/chainlink-protos/cre/go/sdk"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http"
 	"github.com/smartcontractkit/cre-sdk-go/cre"
 	"github.com/smartcontractkit/cre-sdk-go/cre/wasm"
 
-	// 🔥 IMPORT DO BINDING GERADO
+	// Generated contract bindings
 	"auto-lock-defi/contracts/evm/src/generated/vehicle_token_consumer"
 )
 
+//////////////////////////////////////////////////////////////
+// CONFIGURATION STRUCT
+//////////////////////////////////////////////////////////////
+
+// Config is loaded from config.json.
+// It contains runtime parameters injected by CRE.
 type Config struct {
 	DetranApiUrl         string `json:"detranApiMock"`
 	ChainSelector        string `json:"chainSelector"`
 	TokenizationContract string `json:"tokenizationContract"`
-	WorldIDAppID         string `json:"worldIdAppId"`
+	WorldIDRpID          string `json:"worldIdRpId"`
 }
 
+//////////////////////////////////////////////////////////////
+// WORLD ID PROOF STRUCTS (v4-compatible format)
+//////////////////////////////////////////////////////////////
+
+// WorldIDResponse represents a single proof response
+// returned by the World ID 4.0 widget.
+type WorldIDResponse struct {
+	Identifier string `json:"identifier"`
+	Nullifier  string `json:"nullifier"`
+	MerkleRoot string `json:"merkle_root"`
+	Proof      string `json:"proof"`
+	SignalHash string `json:"signal_hash"`
+}
+
+// WorldIDProof represents the full proof payload
+// sent from the frontend to the CRE workflow.
 type WorldIDProof struct {
-	NullifierHash     string `json:"nullifier_hash"`
-	MerkleRoot        string `json:"merkle_root"`
-	Proof             string `json:"proof"`
-	VerificationLevel string `json:"verification_level"`
+	ProtocolVersion string            `json:"protocol_version"`
+	Action          string            `json:"action"`
+	Environment     string            `json:"environment"`
+	Responses       []WorldIDResponse `json:"responses"`
 }
 
+//////////////////////////////////////////////////////////////
+// TOKENIZATION PAYLOAD
+//////////////////////////////////////////////////////////////
+
+// TokenizationPayload is the full input
+// received by the HTTP trigger.
 type TokenizationPayload struct {
 	Plate   string       `json:"plate"`
 	Renavam string       `json:"renavam"`
@@ -40,48 +67,55 @@ type TokenizationPayload struct {
 	Proof   WorldIDProof `json:"proof"`
 }
 
+//////////////////////////////////////////////////////////////
+// WORKFLOW RESULT STRUCT
+//////////////////////////////////////////////////////////////
+
+// ExecutionResult is returned as JSON
+// to the worker after successful execution.
 type ExecutionResult struct {
 	TxHash string `json:"txHash"`
 	Status string `json:"status"`
 }
 
+//////////////////////////////////////////////////////////////
+// WORLD ID VERIFICATION (v4)
+//////////////////////////////////////////////////////////////
+
+// verifyWorldID verifies a World ID proof
+// using the official v4 endpoint (RP-based verification).
 func verifyWorldID(cfg *Config, runtime cre.Runtime, proof WorldIDProof) error {
 
-	secretPromise := runtime.GetSecret(&protos.SecretRequest{
-		Id: "WORLD_ID_API_KEY",
-	})
-
-	secret, err := secretPromise.Await()
-	if err != nil {
-		return err
+	// Ensure at least one proof response exists
+	if len(proof.Responses) == 0 {
+		return fmt.Errorf("no World ID responses found")
 	}
 
-	apiKey := secret.Value
+	response := proof.Responses[0]
 
+	// Build verification payload
 	payload := map[string]interface{}{
-		"nullifier_hash":     proof.NullifierHash,
-		"merkle_root":        proof.MerkleRoot,
-		"proof":              proof.Proof,
-		"verification_level": proof.VerificationLevel,
-		"action":             "tokenizevehicle",
+		"nullifier":   response.Nullifier,
+		"merkle_root": response.MerkleRoot,
+		"proof":       response.Proof,
 	}
 
 	body, _ := json.Marshal(payload)
 
 	client := &http.Client{}
 
-	_, err = http.SendRequest(
+	// Send request through CRE HTTP capability (consensus-aware)
+	_, err := http.SendRequest(
 		cfg,
 		runtime,
 		client,
-		func(cfg *Config, log *slog.Logger, requester *http.SendRequester) ([]byte, error) {
+		func(cfg *Config, logger *slog.Logger, requester *http.SendRequester) ([]byte, error) {
 
 			req := &http.Request{
-				Url:    fmt.Sprintf("https://developer.worldcoin.org/api/v2/verify/%s", cfg.WorldIDAppID),
+				Url:    fmt.Sprintf("https://developer.worldcoin.org/api/v4/verify/%s", cfg.WorldIDRpID),
 				Method: "POST",
 				Headers: map[string]string{
-					"Content-Type":  "application/json",
-					"Authorization": "Bearer " + apiKey,
+					"Content-Type": "application/json",
 				},
 				Body: body,
 			}
@@ -99,12 +133,19 @@ func verifyWorldID(cfg *Config, runtime cre.Runtime, proof WorldIDProof) error {
 	return err
 }
 
+//////////////////////////////////////////////////////////////
+// ON-CHAIN WRITE
+//////////////////////////////////////////////////////////////
+
+// writeReportOnChain writes vehicle data
+// to the deployed smart contract.
 func writeReportOnChain(
 	config *Config,
 	runtime cre.Runtime,
 	payload TokenizationPayload,
 ) (string, error) {
 
+	// Convert chain selector string to CRE selector
 	selector, err := evm.ChainSelectorFromName(config.ChainSelector)
 	if err != nil {
 		return "", err
@@ -114,8 +155,10 @@ func writeReportOnChain(
 		ChainSelector: selector,
 	}
 
+	// Convert contract address
 	consumerAddress := common.HexToAddress(config.TokenizationContract)
 
+	// Instantiate contract binding
 	consumerContract, err := vehicle_token_consumer.NewVehicleTokenConsumer(
 		evmClient,
 		consumerAddress,
@@ -125,10 +168,12 @@ func writeReportOnChain(
 		return "", err
 	}
 
+	// Define gas configuration
 	gasConfig := &evm.GasConfig{
 		GasLimit: 500000,
 	}
 
+	// Execute contract write
 	writePromise := consumerContract.WriteReportFromVehicleReport(
 		runtime,
 		vehicle_token_consumer.VehicleReport{
@@ -148,17 +193,31 @@ func writeReportOnChain(
 
 	return fmt.Sprintf("0x%x", resp.TxHash), nil
 }
-func onTokenizationRequest(config *Config, runtime cre.Runtime, trigger *http.Payload) (*ExecutionResult, error) {
+
+//////////////////////////////////////////////////////////////
+// MAIN WORKFLOW HANDLER
+//////////////////////////////////////////////////////////////
+
+// onTokenizationRequest is executed when the HTTP trigger fires.
+func onTokenizationRequest(
+	config *Config,
+	runtime cre.Runtime,
+	trigger *http.Payload,
+) (*ExecutionResult, error) {
 
 	var payload TokenizationPayload
+
+	// Parse incoming JSON payload
 	if err := json.Unmarshal(trigger.Input, &payload); err != nil {
 		return nil, err
 	}
 
+	// Step 1: Verify World ID proof
 	if err := verifyWorldID(config, runtime, payload.Proof); err != nil {
 		return nil, err
 	}
 
+	// Step 2: Write vehicle report on-chain
 	txHash, err := writeReportOnChain(config, runtime, payload)
 	if err != nil {
 		return nil, err
@@ -170,7 +229,17 @@ func onTokenizationRequest(config *Config, runtime cre.Runtime, trigger *http.Pa
 	}, nil
 }
 
-func InitWorkflow(config *Config, logger *slog.Logger, secretsProvider cre.SecretsProvider) (cre.Workflow[*Config], error) {
+//////////////////////////////////////////////////////////////
+// WORKFLOW INITIALIZATION
+//////////////////////////////////////////////////////////////
+
+// InitWorkflow registers the HTTP trigger handler.
+func InitWorkflow(
+	config *Config,
+	logger *slog.Logger,
+	secretsProvider cre.SecretsProvider,
+) (cre.Workflow[*Config], error) {
+
 	return cre.Workflow[*Config]{
 		cre.Handler(
 			http.Trigger(&http.Config{}),
@@ -178,6 +247,10 @@ func InitWorkflow(config *Config, logger *slog.Logger, secretsProvider cre.Secre
 		),
 	}, nil
 }
+
+//////////////////////////////////////////////////////////////
+// ENTRY POINT
+//////////////////////////////////////////////////////////////
 
 func main() {
 	wasm.NewRunner(cre.ParseJSON[Config]).Run(InitWorkflow)

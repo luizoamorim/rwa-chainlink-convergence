@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -27,7 +26,6 @@ type CREOutput struct {
 }
 
 func main() {
-
 	http.HandleFunc("/tokenize", handleTokenize)
 	http.HandleFunc("/ws", handleWS)
 
@@ -88,29 +86,18 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("📦 Received payload:", payload)
+	fmt.Println("📦 Received payload")
 
-	broadcast(map[string]string{
-		"stage": "received",
-	})
+	broadcast(map[string]string{"stage": "received"})
 
-	filePath := "worker_payload.json"
-
-	file, err := os.Create(filePath)
+	// Marshal inline JSON
+	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
-		http.Error(w, "Failed to create payload file", 500)
-		return
-	}
-	defer file.Close()
-
-	if err := json.NewEncoder(file).Encode(payload); err != nil {
-		http.Error(w, "Failed to write payload file", 500)
+		http.Error(w, "Failed to encode payload", 500)
 		return
 	}
 
-	broadcast(map[string]string{
-		"stage": "executing_cre",
-	})
+	broadcast(map[string]string{"stage": "executing_cre"})
 
 	start := time.Now()
 
@@ -120,13 +107,11 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 		"simulate",
 		"./auto-lock-defi",
 		"--target", "staging-settings",
-		"--broadcast",
 		"--trigger-index", "0",
 		"--non-interactive",
-		"--http-payload", filePath,
+		"--http-payload", string(bodyBytes),
 	)
 
-	// executa a partir da raiz do projeto
 	cmd.Dir = ".."
 
 	output, err := cmd.CombinedOutput()
@@ -139,7 +124,6 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 			"stage": "error",
 			"error": string(output),
 		})
-
 		http.Error(w, string(output), 500)
 		return
 	}
@@ -147,8 +131,11 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 	elapsed := time.Since(start)
 	fmt.Println("⏱ Execution time:", elapsed)
 
-	// Extrair JSON do output
-	cleanJSON := extractJSON(output)
+	cleanJSON := extractSimulationJSON(output)
+	if cleanJSON == nil {
+		http.Error(w, "No simulation result found", 500)
+		return
+	}
 
 	var result CREOutput
 	if err := json.Unmarshal(cleanJSON, &result); err != nil {
@@ -162,18 +149,27 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(cleanJSON)
+	w.Write(output)
 }
 
-func extractJSON(output []byte) []byte {
+func extractSimulationJSON(output []byte) []byte {
 	str := string(output)
 
-	start := strings.Index(str, "{")
-	end := strings.LastIndex(str, "}")
-
-	if start == -1 || end == -1 {
-		return output
+	marker := "Workflow Simulation Result:"
+	index := strings.Index(str, marker)
+	if index == -1 {
+		return nil
 	}
 
-	return []byte(str[start : end+1])
+	// Slice from marker onward
+	sub := str[index:]
+
+	start := strings.Index(sub, "{")
+	end := strings.Index(sub, "}")
+
+	if start == -1 || end == -1 {
+		return nil
+	}
+
+	return []byte(sub[start : end+1])
 }

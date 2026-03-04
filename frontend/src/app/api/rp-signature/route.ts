@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { signRequest } from '@worldcoin/idkit-server';
+import { signRequest } from '@worldcoin/idkit/signing';
 
 export async function POST(request: Request) {
 	const { action } = await request.json();

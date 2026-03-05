@@ -1,0 +1,15 @@
+####IMPORTANT NOTE: This file is a template for your project configuration
+### Please replace it with a properly named project.yaml file and update the RPC URLs accordingly.
+### The staging settings should point to your Tenderly virtual RPC, while the production settings should point to a reliable public RPC for the Sepolia testnet.
+########################################################################################
+########################## REPLACE THIS FILE BY A project.yaml #########################
+########################################################################################
+staging-settings:
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia
+      url: https://ethereum-sepolia-rpc.publicnode.com
+
+production-settings:
+  rpcs:
+    - chain-name: ethereum-testnet-sepolia
+      url: https://ethereum-sepolia-rpc.publicnode.com

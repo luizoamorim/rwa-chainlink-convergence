@@ -16,6 +16,7 @@ type Props = {
 export default function VerifyButton({ plate, renavam, wallet }: Props) {
 	const [open, setOpen] = useState(false);
 	const [rpContext, setRpContext] = useState<RpContext | null>(null);
+	const [isProcessing, setIsProcessing] = useState(false);
 
 	useEffect(() => {
 		async function fetchSignature() {
@@ -41,10 +42,18 @@ export default function VerifyButton({ plate, renavam, wallet }: Props) {
 
 	if (!rpContext) return null;
 
+	const disabled = isProcessing || !plate || !renavam || !wallet;
+
 	return (
 		<>
-			<button onClick={() => setOpen(true)} className="w-full mt-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition">
-				Verify with World ID
+			<button
+				disabled={disabled}
+				onClick={() => setOpen(true)}
+				className={`w-full mt-6 py-3 rounded-xl font-bold transition ${
+					disabled ? 'bg-slate-400 text-white cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700'
+				}`}
+			>
+				{isProcessing ? 'Processing...' : 'Verify with World ID'}
 			</button>
 
 			<IDKitRequestWidget
@@ -53,28 +62,30 @@ export default function VerifyButton({ plate, renavam, wallet }: Props) {
 				app_id={APP_ID}
 				action={ACTION}
 				rp_context={rpContext}
-				environment="staging" // ou production se for o caso
+				environment="staging"
 				allow_legacy_proofs={true}
 				preset={selfieCheckLegacy({ signal: 'vehicle-tokenization' })}
-				handleVerify={async (result: IDKitResult) => {
-					// NÃO verificar aqui!
-					// Apenas retornar sucesso para o widget continuar
+				handleVerify={async () => {
+					// Let widget continue
 					return;
 				}}
 				onSuccess={async (result: IDKitResult) => {
-					console.log('Proof generated:', result);
+					setIsProcessing(true);
 
-					// Enviar tudo direto para seu backend
-					await fetch('/api/tokenize', {
-						method: 'POST',
-						headers: { 'content-type': 'application/json' },
-						body: JSON.stringify({
-							plate,
-							renavam,
-							wallet,
-							proof: result,
-						}),
-					});
+					try {
+						await fetch('/api/tokenize', {
+							method: 'POST',
+							headers: { 'content-type': 'application/json' },
+							body: JSON.stringify({
+								plate,
+								renavam,
+								wallet,
+								proof: result,
+							}),
+						});
+					} finally {
+						setIsProcessing(false);
+					}
 				}}
 				onError={(errorCode) => {
 					console.error('IDKit error:', errorCode);

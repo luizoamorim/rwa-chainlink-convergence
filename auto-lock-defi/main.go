@@ -9,21 +9,26 @@ import (
 	"math/big"
 
 	"github.com/ethereum/go-ethereum/common"
+
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/blockchain/evm"
 	"github.com/smartcontractkit/cre-sdk-go/capabilities/networking/http"
 	"github.com/smartcontractkit/cre-sdk-go/cre"
 	"github.com/smartcontractkit/cre-sdk-go/cre/wasm"
 
-	// Generated contract bindings
+	// generated binding
 	"auto-lock-defi/contracts/evm/src/generated/vehicle_token_consumer"
 )
 
 //////////////////////////////////////////////////////////////
-// CONFIGURATION STRUCT
+// DEMO NULLIFIER STORAGE
 //////////////////////////////////////////////////////////////
 
-// Config is loaded from config.json.
-// It contains runtime parameters injected by CRE.
+var usedNullifiers = make(map[string]bool)
+
+//////////////////////////////////////////////////////////////
+// CONFIG
+//////////////////////////////////////////////////////////////
+
 type Config struct {
 	DetranApiUrl         string `json:"detranApiMock"`
 	ChainSelector        string `json:"chainSelector"`
@@ -32,11 +37,9 @@ type Config struct {
 }
 
 //////////////////////////////////////////////////////////////
-// WORLD ID PROOF STRUCTS (v4-compatible format)
+// WORLD ID STRUCTS
 //////////////////////////////////////////////////////////////
 
-// WorldIDResponse represents a single proof response
-// returned by the World ID 4.0 widget.
 type WorldIDResponse struct {
 	Identifier string `json:"identifier"`
 	Nullifier  string `json:"nullifier"`
@@ -45,8 +48,6 @@ type WorldIDResponse struct {
 	SignalHash string `json:"signal_hash"`
 }
 
-// WorldIDProof represents the full proof payload
-// sent from the frontend to the CRE workflow.
 type WorldIDProof struct {
 	ProtocolVersion string            `json:"protocol_version"`
 	Action          string            `json:"action"`
@@ -55,11 +56,9 @@ type WorldIDProof struct {
 }
 
 //////////////////////////////////////////////////////////////
-// TOKENIZATION PAYLOAD
+// REQUEST PAYLOAD
 //////////////////////////////////////////////////////////////
 
-// TokenizationPayload is the full input
-// received by the HTTP trigger.
 type TokenizationPayload struct {
 	Plate   string       `json:"plate"`
 	Renavam string       `json:"renavam"`
@@ -68,32 +67,32 @@ type TokenizationPayload struct {
 }
 
 //////////////////////////////////////////////////////////////
-// WORKFLOW RESULT STRUCT
+// RESPONSE
 //////////////////////////////////////////////////////////////
 
-// ExecutionResult is returned as JSON
-// to the worker after successful execution.
 type ExecutionResult struct {
 	TxHash string `json:"txHash"`
 	Status string `json:"status"`
 }
 
 //////////////////////////////////////////////////////////////
-// WORLD ID VERIFICATION (v4)
+// WORLD ID VERIFICATION
 //////////////////////////////////////////////////////////////
 
-// verifyWorldID verifies a World ID proof
-// using the official v4 endpoint (RP-based verification).
 func verifyWorldID(cfg *Config, runtime cre.Runtime, proof WorldIDProof) error {
 
-	// Ensure at least one proof response exists
 	if len(proof.Responses) == 0 {
 		return fmt.Errorf("no World ID responses found")
 	}
 
 	response := proof.Responses[0]
 
-	// Build verification payload
+	if usedNullifiers[response.Nullifier] {
+		return fmt.Errorf("nullifier already used")
+	}
+
+	usedNullifiers[response.Nullifier] = true
+
 	payload := map[string]interface{}{
 		"nullifier":   response.Nullifier,
 		"merkle_root": response.MerkleRoot,
@@ -104,7 +103,6 @@ func verifyWorldID(cfg *Config, runtime cre.Runtime, proof WorldIDProof) error {
 
 	client := &http.Client{}
 
-	// Send request through CRE HTTP capability (consensus-aware)
 	_, err := http.SendRequest(
 		cfg,
 		runtime,
@@ -134,18 +132,75 @@ func verifyWorldID(cfg *Config, runtime cre.Runtime, proof WorldIDProof) error {
 }
 
 //////////////////////////////////////////////////////////////
+// DETRAN FETCH
+//////////////////////////////////////////////////////////////
+
+type DetranResponse struct {
+	Plate     string  `json:"plate"`
+	Status    string  `json:"status"`
+	Fines     float64 `json:"fines"`
+	ModelCode string  `json:"model_code"`
+	Price     float64 `json:"price"`
+}
+
+func fetchDetran(
+	cfg *Config,
+	runtime cre.Runtime,
+	plate string,
+) (*DetranResponse, error) {
+
+	client := &http.Client{}
+
+	respBytes, err := http.SendRequest(
+		cfg,
+		runtime,
+		client,
+		func(cfg *Config, logger *slog.Logger, requester *http.SendRequester) ([]byte, error) {
+
+			req := &http.Request{
+				Url:    fmt.Sprintf("%s/detran/%s", cfg.DetranApiUrl, plate),
+				Method: "GET",
+			}
+
+			resp, err := requester.SendRequest(req).Await()
+			if err != nil {
+				return nil, err
+			}
+
+			return resp.Body, nil
+		},
+		cre.ConsensusIdenticalAggregation[[]byte](),
+	).Await()
+
+	if err != nil {
+		return nil, err
+	}
+
+	var detran DetranResponse
+
+	err = json.Unmarshal(respBytes, &detran)
+	if err != nil {
+		return nil, err
+	}
+
+	if detran.Status != "clear" {
+		return nil, fmt.Errorf("vehicle blocked")
+	}
+
+	return &detran, nil
+}
+
+//////////////////////////////////////////////////////////////
 // ON-CHAIN WRITE
 //////////////////////////////////////////////////////////////
 
-// writeReportOnChain writes vehicle data
-// to the deployed smart contract.
 func writeReportOnChain(
 	config *Config,
 	runtime cre.Runtime,
 	payload TokenizationPayload,
+	detran *DetranResponse,
 ) (string, error) {
 
-	// Convert chain selector string to CRE selector
 	selector, err := evm.ChainSelectorFromName(config.ChainSelector)
 	if err != nil {
 		return "", err
@@ -155,10 +210,8 @@ func writeReportOnChain(
 		ChainSelector: selector,
 	}
 
-	// Convert contract address
 	consumerAddress := common.HexToAddress(config.TokenizationContract)
 
-	// Instantiate contract binding
 	consumerContract, err := vehicle_token_consumer.NewVehicleTokenConsumer(
 		evmClient,
 		consumerAddress,
@@ -168,19 +221,17 @@ func writeReportOnChain(
 		return "", err
 	}
 
-	// Define gas configuration
 	gasConfig := &evm.GasConfig{
 		GasLimit: 500000,
 	}
 
-	// Execute contract write
 	writePromise := consumerContract.WriteReportFromVehicleReport(
 		runtime,
 		vehicle_token_consumer.VehicleReport{
 			Owner:   common.HexToAddress(payload.Wallet),
 			Plate:   payload.Plate,
 			Renavam: payload.Renavam,
-			Value:   big.NewInt(45000),
+			Value:   big.NewInt(int64(detran.Price)),
 			Uri:     "https://metadata.example/vehicle.json",
 		},
 		gasConfig,
@@ -195,10 +246,9 @@ func writeReportOnChain(
 }
 
 //////////////////////////////////////////////////////////////
-// MAIN WORKFLOW HANDLER
+// HANDLER
 //////////////////////////////////////////////////////////////
 
-// onTokenizationRequest is executed when the HTTP trigger fires.
 func onTokenizationRequest(
 	config *Config,
 	runtime cre.Runtime,
@@ -207,18 +257,25 @@ func onTokenizationRequest(
 
 	var payload TokenizationPayload
 
-	// Parse incoming JSON payload
 	if err := json.Unmarshal(trigger.Input, &payload); err != nil {
 		return nil, err
 	}
 
-	// Step 1: Verify World ID proof
-	if err := verifyWorldID(config, runtime, payload.Proof); err != nil {
+	// 1️⃣ Verify WorldID
+	// if err := verifyWorldID(config, runtime, payload.Proof); err != nil {
+	// 	return nil, err
+	// }
+
+	// 2️⃣ Fetch DETRAN
+	detran, err := fetchDetran(config, runtime, payload.Plate)
+	if err != nil {
 		return nil, err
 	}
 
-	// Step 2: Write vehicle report on-chain
-	txHash, err := writeReportOnChain(config, runtime, payload)
+	fmt.Println("DETRAN OK:", detran.Plate, "Price:", detran.Price)
+
+	// 3️⃣ Write on-chain
+	txHash, err := writeReportOnChain(config, runtime, payload, detran)
 	if err != nil {
 		return nil, err
 	}
@@ -230,10 +287,9 @@ func onTokenizationRequest(
 }
 
 //////////////////////////////////////////////////////////////
-// WORKFLOW INITIALIZATION
+// WORKFLOW
 //////////////////////////////////////////////////////////////
 
-// InitWorkflow registers the HTTP trigger handler.
 func InitWorkflow(
 	config *Config,
 	logger *slog.Logger,
@@ -249,7 +305,7 @@ func InitWorkflow(
 }
 
 //////////////////////////////////////////////////////////////
-// ENTRY POINT
+// ENTRYPOINT
 //////////////////////////////////////////////////////////////
 
 func main() {

@@ -15,6 +15,7 @@ NC     := \033[0m # No Color
 
 test-env: deploy simulate-rwa
 
+
 # --------------------------------------
 # BUILD
 # --------------------------------------
@@ -23,63 +24,80 @@ build-contracts:
 	@echo "🛠️  Compiling Smart Contracts..."
 	@forge build
 
+
 # --------------------------------------
 # DEPLOY (NFT + Consumer + Ownership)
 # --------------------------------------
 
 deploy: build-contracts
 	@echo "🚀 Deploying VehicleNFT..."
+
 	@forge script contracts/evm/script/DeployVehicleNFT.s.sol:DeployVehicleNFT \
 	--rpc-url $(TENDERLY_RPC_URL) \
-	--private-key $(PRIVATE_KEY) \
+	--private-key $(CRE_ETH_PRIVATE_KEY) \
 	--broadcast --non-interactive
 
 	@NFT_ADDRESS=$$(jq -r '.transactions[0].contractAddress' \
-		broadcast/DeployVehicleNFT.s.sol/11155111/run-latest.json); \
+		broadcast/DeployVehicleNFT.s.sol/99911155111/run-latest.json); \
 	if [ -z "$$NFT_ADDRESS" ] || [ "$$NFT_ADDRESS" = "null" ]; then \
 		echo "$(RED)❌ Failed to capture NFT address$(NC)"; \
 		exit 1; \
 	fi; \
 	echo "✅ NFT deployed at: $(GREEN)$$NFT_ADDRESS$(NC)"; \
-	echo "NFT_ADDRESS=$$NFT_ADDRESS" > .deploy.env
+	echo "VEHICLE_NFT_ADDRESS=$$NFT_ADDRESS" > .deploy.env; \
+	if grep -q "^VEHICLE_NFT_ADDRESS=" .env; then \
+		sed -i.bak "s|^VEHICLE_NFT_ADDRESS=.*|VEHICLE_NFT_ADDRESS=$$NFT_ADDRESS|" .env; \
+	else \
+		echo "VEHICLE_NFT_ADDRESS=$$NFT_ADDRESS" >> .env; \
+	fi; \
+	rm -f .env.bak
 
 	@echo "🚀 Deploying VehicleTokenConsumer..."
-	@source .deploy.env; \
+
+	@NFT_ADDRESS=$$(grep VEHICLE_NFT_ADDRESS .deploy.env | cut -d '=' -f2); \
 	NFT_ADDRESS=$$NFT_ADDRESS forge script contracts/evm/script/DeployVehicleConsumer.s.sol:DeployVehicleConsumer \
 		--rpc-url $(TENDERLY_RPC_URL) \
-		--private-key $(PRIVATE_KEY) \
-		--broadcast --non-interactive
+		--private-key $(CRE_ETH_PRIVATE_KEY) \
+		--broadcast \
+		--non-interactive
 
 	@CONSUMER_ADDRESS=$$(jq -r '.transactions[0].contractAddress' \
-		broadcast/DeployVehicleConsumer.s.sol/11155111/run-latest.json); \
+		broadcast/DeployVehicleConsumer.s.sol/99911155111/run-latest.json); \
 	if [ -z "$$CONSUMER_ADDRESS" ] || [ "$$CONSUMER_ADDRESS" = "null" ]; then \
 		echo "$(RED)❌ Failed to capture Consumer address$(NC)"; \
 		exit 1; \
 	fi; \
 	echo "✅ Consumer deployed at: $(GREEN)$$CONSUMER_ADDRESS$(NC)"; \
-	echo "CONSUMER_ADDRESS=$$CONSUMER_ADDRESS" >> .deploy.env
+	echo "CONSUMER_ADDRESS=$$CONSUMER_ADDRESS" >> .deploy.env; \
+	if grep -q "^CONSUMER_ADDRESS=" .env; then \
+		sed -i.bak "s|^CONSUMER_ADDRESS=.*|CONSUMER_ADDRESS=$$CONSUMER_ADDRESS|" .env; \
+	else \
+		echo "CONSUMER_ADDRESS=$$CONSUMER_ADDRESS" >> .env; \
+	fi; \
+	rm -f .env.bak
 
 	@echo "🔄 Transferring NFT ownership..."
-	@source .deploy.env; \
+
+	@NFT_ADDRESS=$$(grep VEHICLE_NFT_ADDRESS .deploy.env | cut -d '=' -f2); \
+	CONSUMER_ADDRESS=$$(grep CONSUMER_ADDRESS .deploy.env | cut -d '=' -f2); \
 	NFT_ADDRESS=$$NFT_ADDRESS CONSUMER_ADDRESS=$$CONSUMER_ADDRESS \
 	forge script contracts/evm/script/TransferOwnership.s.sol:TransferOwnership \
-		--rpc-url $(TENDERLY_RPC_URL) \
-		--private-key $(PRIVATE_KEY) \
-		--broadcast --non-interactive
+	--rpc-url $(TENDERLY_RPC_URL) \
+	--private-key $(CRE_ETH_PRIVATE_KEY) \
+	--broadcast --non-interactive
 
-	@echo "📝 Updating config..."
-	@source .deploy.env; \
-	sed -i '' "s/\"tokenizationContract\": \".*\"/\"tokenizationContract\": \"$$CONSUMER_ADDRESS\"/" auto-lock-defi/config.staging.json
+	@echo "📝 Updating config.staging.json..."
+
+	@CONSUMER_ADDRESS=$$(grep CONSUMER_ADDRESS .deploy.env | cut -d '=' -f2); \
+	sed -i.bak "s|\"tokenizationContract\": \".*\"|\"tokenizationContract\": \"$$CONSUMER_ADDRESS\"|" auto-lock-defi/config.staging.json; \
+	rm -f auto-lock-defi/config.staging.json.bak
 
 	@echo "$(GREEN)🎉 Deploy completed successfully!$(NC)"
 
 	@$(MAKE) export-abi
-	@echo "$(GREEN)🎉 ABI exported successfully!$(NC)"
-
 	@$(MAKE) generate-bindings
-	@echo "$(GREEN)🎉 Bindings generated successfully!$(NC)"
 
-	
+
 # --------------------------------------
 # EXPORT ABI
 # --------------------------------------
@@ -91,6 +109,7 @@ export-abi:
 	> auto-lock-defi/contracts/evm/src/abi/VehicleTokenConsumer.abi
 	@echo "✅ ABI exported successfully!"
 
+
 # --------------------------------------
 # GENERATE CRE BINDINGS
 # --------------------------------------
@@ -101,19 +120,25 @@ generate-bindings:
 	@cd auto-lock-defi && go mod tidy
 	@echo "✅ Bindings generated."
 
+
 # --------------------------------------
 # SIMULATION (CRE)
 # --------------------------------------
 
 simulate-rwa:
+
 	@echo "🌐 Starting Mock DETRAN Backend..."
 	@go run mocks/main.go & sleep 3
 
-	@echo "🧪 Running Chainlink CRE Simulation with broadcast..."
-	@if cre workflow simulate auto-lock-defi --target staging-settings -e .env \
+	@echo "🧪 Running Chainlink CRE Simulation..."
+
+	@if cre workflow simulate auto-lock-defi \
+	--target staging-settings \
+	-e .env \
 	--broadcast \
 	--http-payload '{"plate":"ABC1234","renavam":"123456789","wallet":"0x0000000000000000000000000000000000000001","proof":{"nullifier_hash":"0xabc","merkle_root":"0xdef","proof":"0xghi","verification_level":"device"}}' \
-	--trigger-index 0 --non-interactive; then \
+	--trigger-index 0 \
+	--non-interactive; then \
 		echo "$(GREEN)✅ SUCCESS: RWA Workflow validated!$(NC)"; \
 	else \
 		echo "$(RED)❌ ERROR: Simulation failed. Check logs above.$(NC)"; \
@@ -123,6 +148,7 @@ simulate-rwa:
 
 	@echo "🧹 Cleaning up processes..."
 	@pkill -f "go run mocks/main.go" || true
+
 
 # --------------------------------------
 # INDIVIDUAL SERVICES
@@ -139,6 +165,7 @@ listener:
 
 frontend:
 	cd frontend && npm run dev
+
 
 # --------------------------------------
 # FULL STACK

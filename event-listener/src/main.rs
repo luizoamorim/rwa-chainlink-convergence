@@ -6,6 +6,7 @@ use axum::{
 };
 use dotenvy::dotenv;
 use ethers::prelude::*;
+use futures_util::StreamExt;
 use std::{env, net::SocketAddr, sync::Arc};
 use tokio::sync::broadcast;
 
@@ -58,18 +59,25 @@ async fn listen_events(
     contract_address: Address,
     tx: broadcast::Sender<String>,
 ) {
-    let filter = Filter::new().address(contract_address);
+    let transfer_topic = H256::from_slice(&ethers::utils::keccak256(
+        "Transfer(address,address,uint256)",
+    ));
+
+    let filter = Filter::new()
+        .address(contract_address)
+        .topic0(transfer_topic);
 
     let mut stream = provider.subscribe_logs(&filter).await.unwrap();
 
-    println!("👂 Listening for contract events...");
+    println!("👂 Listening for NFT mint events...");
 
     while let Some(log) = stream.next().await {
-        println!("📦 Event received: {:?}", log);
+        let token_id = U256::from_big_endian(log.topics[3].as_bytes());
 
         let payload = serde_json::json!({
             "type": "VEHICLE_TOKENIZED",
-            "tx_hash": log.transaction_hash,
+            "token_id": token_id,
+            "tx_hash": log.transaction_hash
         });
 
         let _ = tx.send(payload.to_string());

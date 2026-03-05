@@ -1,6 +1,34 @@
 @import "tailwindcss";
 
+:root {
+  --primary: #1E3A8A;
+  --gold: #C9A227;
+
+  --bg: #F5F7FA;
+  --surface: #FFFFFF;
+  --border: #E2E8F0;
+
+  --text: #0B132B;
+  --text-secondary: #475569;
+}
+
 body {
-  @apply bg-slate-50 text-slate-900 min-h-screen;
+  @apply min-h-screen;
+  background: var(--bg);
+  color: var(--text);
   font-family: Inter, system-ui, sans-serif;
+}
+
+@keyframes scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 28s linear infinite;
 }

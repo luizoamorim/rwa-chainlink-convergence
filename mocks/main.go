@@ -23,8 +23,17 @@ func main() {
 			Status:    "clear",
 			Fines:     0.0,
 			ModelCode: "005456-9",
-			Price:     45000.00,
+			Price:     75000.00,
 		}
+
+		if plate == "ABC1234" {
+			data.Price = 35000.00
+		}
+
+		if plate == "XYZ9999" {
+			data.Price = 120000.00
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(data)
 	})

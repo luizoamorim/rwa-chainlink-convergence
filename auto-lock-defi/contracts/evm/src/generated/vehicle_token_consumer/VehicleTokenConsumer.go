@@ -51,7 +51,7 @@ var (
 )
 
 var VehicleTokenConsumerMetaData = &bind.MetaData{
-	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"forwarder\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"nftAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getExpectedAuthor\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getExpectedWorkflowId\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getExpectedWorkflowName\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getForwarderAddress\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"mintVehicle\",\"inputs\":[{\"name\":\"data\",\"type\":\"tuple\",\"internalType\":\"structVehicleTokenConsumer.VehicleReport\",\"components\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"plate\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"renavam\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"value\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"uri\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onReport\",\"inputs\":[{\"name\":\"metadata\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"report\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setExpectedAuthor\",\"inputs\":[{\"name\":\"_author\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setExpectedWorkflowId\",\"inputs\":[{\"name\":\"_id\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setExpectedWorkflowName\",\"inputs\":[{\"name\":\"_name\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setForwarderAddress\",\"inputs\":[{\"name\":\"_forwarder\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"vehicleNFT\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractVehicleNFT\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"ExpectedAuthorUpdated\",\"inputs\":[{\"name\":\"previousAuthor\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newAuthor\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ExpectedWorkflowIdUpdated\",\"inputs\":[{\"name\":\"previousId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ExpectedWorkflowNameUpdated\",\"inputs\":[{\"name\":\"previousName\",\"type\":\"bytes10\",\"indexed\":true,\"internalType\":\"bytes10\"},{\"name\":\"newName\",\"type\":\"bytes10\",\"indexed\":true,\"internalType\":\"bytes10\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ForwarderAddressUpdated\",\"inputs\":[{\"name\":\"previousForwarder\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newForwarder\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SecurityWarning\",\"inputs\":[{\"name\":\"message\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InvalidAuthor\",\"inputs\":[{\"name\":\"received\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"expected\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"InvalidForwarderAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidSender\",\"inputs\":[{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"expected\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"InvalidWorkflowId\",\"inputs\":[{\"name\":\"received\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"expected\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"InvalidWorkflowName\",\"inputs\":[{\"name\":\"received\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"},{\"name\":\"expected\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"WorkflowNameRequiresAuthorValidation\",\"inputs\":[]}]",
+	ABI: "[{\"type\":\"constructor\",\"inputs\":[{\"name\":\"forwarder\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"nftAddress\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"getExpectedAuthor\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getExpectedWorkflowId\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getExpectedWorkflowName\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"getForwarderAddress\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"mintVehicle\",\"inputs\":[{\"name\":\"data\",\"type\":\"tuple\",\"internalType\":\"structVehicleTokenConsumer.VehicleReport\",\"components\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"plate\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"renavam\",\"type\":\"string\",\"internalType\":\"string\"},{\"name\":\"value\",\"type\":\"uint256\",\"internalType\":\"uint256\"},{\"name\":\"uri\",\"type\":\"string\",\"internalType\":\"string\"}]}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"onReport\",\"inputs\":[{\"name\":\"metadata\",\"type\":\"bytes\",\"internalType\":\"bytes\"},{\"name\":\"report\",\"type\":\"bytes\",\"internalType\":\"bytes\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"owner\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"address\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"renounceOwnership\",\"inputs\":[],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setExpectedAuthor\",\"inputs\":[{\"name\":\"_author\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setExpectedWorkflowId\",\"inputs\":[{\"name\":\"_id\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setExpectedWorkflowName\",\"inputs\":[{\"name\":\"_name\",\"type\":\"string\",\"internalType\":\"string\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"setForwarderAddress\",\"inputs\":[{\"name\":\"_forwarder\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"supportsInterface\",\"inputs\":[{\"name\":\"interfaceId\",\"type\":\"bytes4\",\"internalType\":\"bytes4\"}],\"outputs\":[{\"name\":\"\",\"type\":\"bool\",\"internalType\":\"bool\"}],\"stateMutability\":\"view\"},{\"type\":\"function\",\"name\":\"transferOwnership\",\"inputs\":[{\"name\":\"newOwner\",\"type\":\"address\",\"internalType\":\"address\"}],\"outputs\":[],\"stateMutability\":\"nonpayable\"},{\"type\":\"function\",\"name\":\"vehicleNFT\",\"inputs\":[],\"outputs\":[{\"name\":\"\",\"type\":\"address\",\"internalType\":\"contractVehicleNFT\"}],\"stateMutability\":\"view\"},{\"type\":\"event\",\"name\":\"ExpectedAuthorUpdated\",\"inputs\":[{\"name\":\"previousAuthor\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newAuthor\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ExpectedWorkflowIdUpdated\",\"inputs\":[{\"name\":\"previousId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"},{\"name\":\"newId\",\"type\":\"bytes32\",\"indexed\":true,\"internalType\":\"bytes32\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ExpectedWorkflowNameUpdated\",\"inputs\":[{\"name\":\"previousName\",\"type\":\"bytes10\",\"indexed\":true,\"internalType\":\"bytes10\"},{\"name\":\"newName\",\"type\":\"bytes10\",\"indexed\":true,\"internalType\":\"bytes10\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ForwarderAddressUpdated\",\"inputs\":[{\"name\":\"previousForwarder\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newForwarder\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"OwnershipTransferred\",\"inputs\":[{\"name\":\"previousOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"},{\"name\":\"newOwner\",\"type\":\"address\",\"indexed\":true,\"internalType\":\"address\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"RawReport\",\"inputs\":[{\"name\":\"report\",\"type\":\"bytes\",\"indexed\":false,\"internalType\":\"bytes\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"ReportDecoded\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"indexed\":false,\"internalType\":\"address\"},{\"name\":\"plate\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"renavam\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"},{\"name\":\"value\",\"type\":\"uint256\",\"indexed\":false,\"internalType\":\"uint256\"},{\"name\":\"uri\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"event\",\"name\":\"SecurityWarning\",\"inputs\":[{\"name\":\"message\",\"type\":\"string\",\"indexed\":false,\"internalType\":\"string\"}],\"anonymous\":false},{\"type\":\"error\",\"name\":\"InvalidAuthor\",\"inputs\":[{\"name\":\"received\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"expected\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"InvalidForwarderAddress\",\"inputs\":[]},{\"type\":\"error\",\"name\":\"InvalidSender\",\"inputs\":[{\"name\":\"sender\",\"type\":\"address\",\"internalType\":\"address\"},{\"name\":\"expected\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"InvalidWorkflowId\",\"inputs\":[{\"name\":\"received\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"},{\"name\":\"expected\",\"type\":\"bytes32\",\"internalType\":\"bytes32\"}]},{\"type\":\"error\",\"name\":\"InvalidWorkflowName\",\"inputs\":[{\"name\":\"received\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"},{\"name\":\"expected\",\"type\":\"bytes10\",\"internalType\":\"bytes10\"}]},{\"type\":\"error\",\"name\":\"OwnableInvalidOwner\",\"inputs\":[{\"name\":\"owner\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"OwnableUnauthorizedAccount\",\"inputs\":[{\"name\":\"account\",\"type\":\"address\",\"internalType\":\"address\"}]},{\"type\":\"error\",\"name\":\"WorkflowNameRequiresAuthorValidation\",\"inputs\":[]}]",
 }
 
 // Structs
@@ -194,6 +194,24 @@ type OwnershipTransferredDecoded struct {
 	NewOwner      common.Address
 }
 
+type RawReportTopics struct {
+}
+
+type RawReportDecoded struct {
+	Report []byte
+}
+
+type ReportDecodedTopics struct {
+}
+
+type ReportDecodedDecoded struct {
+	Owner   common.Address
+	Plate   string
+	Renavam string
+	Value   *big.Int
+	Uri     string
+}
+
 type SecurityWarningTopics struct {
 }
 
@@ -249,6 +267,12 @@ type VehicleTokenConsumerCodec interface {
 	OwnershipTransferredLogHash() []byte
 	EncodeOwnershipTransferredTopics(evt abi.Event, values []OwnershipTransferredTopics) ([]*evm.TopicValues, error)
 	DecodeOwnershipTransferred(log *evm.Log) (*OwnershipTransferredDecoded, error)
+	RawReportLogHash() []byte
+	EncodeRawReportTopics(evt abi.Event, values []RawReportTopics) ([]*evm.TopicValues, error)
+	DecodeRawReport(log *evm.Log) (*RawReportDecoded, error)
+	ReportDecodedLogHash() []byte
+	EncodeReportDecodedTopics(evt abi.Event, values []ReportDecodedTopics) ([]*evm.TopicValues, error)
+	DecodeReportDecoded(log *evm.Log) (*ReportDecodedDecoded, error)
 	SecurityWarningLogHash() []byte
 	EncodeSecurityWarningTopics(evt abi.Event, values []SecurityWarningTopics) ([]*evm.TopicValues, error)
 	DecodeSecurityWarning(log *evm.Log) (*SecurityWarningDecoded, error)
@@ -839,6 +863,98 @@ func (c *Codec) DecodeOwnershipTransferred(log *evm.Log) (*OwnershipTransferredD
 	}
 	var indexed abi.Arguments
 	for _, arg := range c.abi.Events["OwnershipTransferred"].Inputs {
+		if arg.Indexed {
+			if arg.Type.T == abi.TupleTy {
+				// abigen throws on tuple, so converting to bytes to
+				// receive back the common.Hash as is instead of error
+				arg.Type.T = abi.BytesTy
+			}
+			indexed = append(indexed, arg)
+		}
+	}
+	// Convert [][]byte → []common.Hash
+	topics := make([]common.Hash, len(log.Topics))
+	for i, t := range log.Topics {
+		topics[i] = common.BytesToHash(t)
+	}
+
+	if err := abi.ParseTopics(event, indexed, topics[1:]); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+func (c *Codec) RawReportLogHash() []byte {
+	return c.abi.Events["RawReport"].ID.Bytes()
+}
+
+func (c *Codec) EncodeRawReportTopics(
+	evt abi.Event,
+	values []RawReportTopics,
+) ([]*evm.TopicValues, error) {
+
+	rawTopics, err := abi.MakeTopics()
+	if err != nil {
+		return nil, err
+	}
+
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
+}
+
+// DecodeRawReport decodes a log into a RawReport struct.
+func (c *Codec) DecodeRawReport(log *evm.Log) (*RawReportDecoded, error) {
+	event := new(RawReportDecoded)
+	if err := c.abi.UnpackIntoInterface(event, "RawReport", log.Data); err != nil {
+		return nil, err
+	}
+	var indexed abi.Arguments
+	for _, arg := range c.abi.Events["RawReport"].Inputs {
+		if arg.Indexed {
+			if arg.Type.T == abi.TupleTy {
+				// abigen throws on tuple, so converting to bytes to
+				// receive back the common.Hash as is instead of error
+				arg.Type.T = abi.BytesTy
+			}
+			indexed = append(indexed, arg)
+		}
+	}
+	// Convert [][]byte → []common.Hash
+	topics := make([]common.Hash, len(log.Topics))
+	for i, t := range log.Topics {
+		topics[i] = common.BytesToHash(t)
+	}
+
+	if err := abi.ParseTopics(event, indexed, topics[1:]); err != nil {
+		return nil, err
+	}
+	return event, nil
+}
+
+func (c *Codec) ReportDecodedLogHash() []byte {
+	return c.abi.Events["ReportDecoded"].ID.Bytes()
+}
+
+func (c *Codec) EncodeReportDecodedTopics(
+	evt abi.Event,
+	values []ReportDecodedTopics,
+) ([]*evm.TopicValues, error) {
+
+	rawTopics, err := abi.MakeTopics()
+	if err != nil {
+		return nil, err
+	}
+
+	return bindings.PrepareTopics(rawTopics, evt.ID.Bytes()), nil
+}
+
+// DecodeReportDecoded decodes a log into a ReportDecoded struct.
+func (c *Codec) DecodeReportDecoded(log *evm.Log) (*ReportDecodedDecoded, error) {
+	event := new(ReportDecodedDecoded)
+	if err := c.abi.UnpackIntoInterface(event, "ReportDecoded", log.Data); err != nil {
+		return nil, err
+	}
+	var indexed abi.Arguments
+	for _, arg := range c.abi.Events["ReportDecoded"].Inputs {
 		if arg.Indexed {
 			if arg.Type.T == abi.TupleTy {
 				// abigen throws on tuple, so converting to bytes to
@@ -1716,6 +1832,118 @@ func (c *VehicleTokenConsumer) FilterLogsOwnershipTransferred(runtime cre.Runtim
 			Addresses: [][]byte{c.Address.Bytes()},
 			Topics: []*evm.Topics{
 				{Topic: [][]byte{c.Codec.OwnershipTransferredLogHash()}},
+			},
+			BlockHash: options.BlockHash,
+			FromBlock: pb.NewBigIntFromInt(options.FromBlock),
+			ToBlock:   pb.NewBigIntFromInt(options.ToBlock),
+		},
+	}), nil
+}
+
+// RawReportTrigger wraps the raw log trigger and provides decoded RawReportDecoded data
+type RawReportTrigger struct {
+	cre.Trigger[*evm.Log, *evm.Log]                       // Embed the raw trigger
+	contract                        *VehicleTokenConsumer // Keep reference for decoding
+}
+
+// Adapt method that decodes the log into RawReport data
+func (t *RawReportTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[RawReportDecoded], error) {
+	// Decode the log using the contract's codec
+	decoded, err := t.contract.Codec.DecodeRawReport(l)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode RawReport log: %w", err)
+	}
+
+	return &bindings.DecodedLog[RawReportDecoded]{
+		Log:  l,        // Original log
+		Data: *decoded, // Decoded data
+	}, nil
+}
+
+func (c *VehicleTokenConsumer) LogTriggerRawReportLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []RawReportTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[RawReportDecoded]], error) {
+	event := c.ABI.Events["RawReport"]
+	topics, err := c.Codec.EncodeRawReportTopics(event, filters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode topics for RawReport: %w", err)
+	}
+
+	rawTrigger := evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
+		Addresses:  [][]byte{c.Address.Bytes()},
+		Topics:     topics,
+		Confidence: confidence,
+	})
+
+	return &RawReportTrigger{
+		Trigger:  rawTrigger,
+		contract: c,
+	}, nil
+}
+
+func (c *VehicleTokenConsumer) FilterLogsRawReport(runtime cre.Runtime, options *bindings.FilterOptions) (cre.Promise[*evm.FilterLogsReply], error) {
+	if options == nil {
+		return nil, errors.New("FilterLogs options are required.")
+	}
+	return c.client.FilterLogs(runtime, &evm.FilterLogsRequest{
+		FilterQuery: &evm.FilterQuery{
+			Addresses: [][]byte{c.Address.Bytes()},
+			Topics: []*evm.Topics{
+				{Topic: [][]byte{c.Codec.RawReportLogHash()}},
+			},
+			BlockHash: options.BlockHash,
+			FromBlock: pb.NewBigIntFromInt(options.FromBlock),
+			ToBlock:   pb.NewBigIntFromInt(options.ToBlock),
+		},
+	}), nil
+}
+
+// ReportDecodedTrigger wraps the raw log trigger and provides decoded ReportDecodedDecoded data
+type ReportDecodedTrigger struct {
+	cre.Trigger[*evm.Log, *evm.Log]                       // Embed the raw trigger
+	contract                        *VehicleTokenConsumer // Keep reference for decoding
+}
+
+// Adapt method that decodes the log into ReportDecoded data
+func (t *ReportDecodedTrigger) Adapt(l *evm.Log) (*bindings.DecodedLog[ReportDecodedDecoded], error) {
+	// Decode the log using the contract's codec
+	decoded, err := t.contract.Codec.DecodeReportDecoded(l)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decode ReportDecoded log: %w", err)
+	}
+
+	return &bindings.DecodedLog[ReportDecodedDecoded]{
+		Log:  l,        // Original log
+		Data: *decoded, // Decoded data
+	}, nil
+}
+
+func (c *VehicleTokenConsumer) LogTriggerReportDecodedLog(chainSelector uint64, confidence evm.ConfidenceLevel, filters []ReportDecodedTopics) (cre.Trigger[*evm.Log, *bindings.DecodedLog[ReportDecodedDecoded]], error) {
+	event := c.ABI.Events["ReportDecoded"]
+	topics, err := c.Codec.EncodeReportDecodedTopics(event, filters)
+	if err != nil {
+		return nil, fmt.Errorf("failed to encode topics for ReportDecoded: %w", err)
+	}
+
+	rawTrigger := evm.LogTrigger(chainSelector, &evm.FilterLogTriggerRequest{
+		Addresses:  [][]byte{c.Address.Bytes()},
+		Topics:     topics,
+		Confidence: confidence,
+	})
+
+	return &ReportDecodedTrigger{
+		Trigger:  rawTrigger,
+		contract: c,
+	}, nil
+}
+
+func (c *VehicleTokenConsumer) FilterLogsReportDecoded(runtime cre.Runtime, options *bindings.FilterOptions) (cre.Promise[*evm.FilterLogsReply], error) {
+	if options == nil {
+		return nil, errors.New("FilterLogs options are required.")
+	}
+	return c.client.FilterLogs(runtime, &evm.FilterLogsRequest{
+		FilterQuery: &evm.FilterQuery{
+			Addresses: [][]byte{c.Address.Bytes()},
+			Topics: []*evm.Topics{
+				{Topic: [][]byte{c.Codec.ReportDecodedLogHash()}},
 			},
 			BlockHash: options.BlockHash,
 			FromBlock: pb.NewBigIntFromInt(options.FromBlock),

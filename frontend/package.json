@@ -12,6 +12,7 @@
     "@tanstack/react-query": "^4.43.0",
     "@worldcoin/idkit": "^4.0.7",
     "@worldcoin/idkit-server": "^1.0.0",
+    "framer-motion": "^12.35.0",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
     "react": "19.2.3",

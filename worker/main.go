@@ -13,47 +13,73 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+//////////////////////////////////////////////////////////////
+// WEBSOCKET MANAGEMENT
+//////////////////////////////////////////////////////////////
+
+// Allow connections from any origin (development only)
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
+// Active WebSocket clients
 var clients = make(map[*websocket.Conn]bool)
-var mu sync.Mutex
+var wsMutex sync.Mutex
+
+//////////////////////////////////////////////////////////////
+// EXECUTION LOCK (Prevents multiple simultaneous executions)
+//////////////////////////////////////////////////////////////
+
+var executionMutex sync.Mutex
+var isExecuting bool
+
+//////////////////////////////////////////////////////////////
+// CRE OUTPUT STRUCT
+//////////////////////////////////////////////////////////////
 
 type CREOutput struct {
 	Status string `json:"Status"`
 	TxHash string `json:"TxHash"`
 }
 
+//////////////////////////////////////////////////////////////
+// MAIN ENTRY POINT
+//////////////////////////////////////////////////////////////
+
 func main() {
 	http.HandleFunc("/tokenize", handleTokenize)
-	http.HandleFunc("/ws", handleWS)
+	http.HandleFunc("/ws", handleWebSocket)
 
 	fmt.Println("🚀 Worker running on :8081")
 	log.Fatal(http.ListenAndServe(":8081", nil))
 }
 
-func handleWS(w http.ResponseWriter, r *http.Request) {
+//////////////////////////////////////////////////////////////
+// WEBSOCKET HANDLER
+//////////////////////////////////////////////////////////////
+
+func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return
 	}
 
-	mu.Lock()
+	wsMutex.Lock()
 	clients[conn] = true
-	mu.Unlock()
+	wsMutex.Unlock()
 
 	fmt.Println("🔌 WebSocket client connected")
 
 	defer func() {
-		mu.Lock()
+		wsMutex.Lock()
 		delete(clients, conn)
-		mu.Unlock()
+		wsMutex.Unlock()
 		conn.Close()
 		fmt.Println("❌ WebSocket client disconnected")
 	}()
 
+	// Keep connection alive
 	for {
 		if _, _, err := conn.ReadMessage(); err != nil {
 			break
@@ -61,9 +87,14 @@ func handleWS(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+//////////////////////////////////////////////////////////////
+// BROADCAST FUNCTION
+//////////////////////////////////////////////////////////////
+
+// Sends stage updates to all connected WebSocket clients
 func broadcast(message interface{}) {
-	mu.Lock()
-	defer mu.Unlock()
+	wsMutex.Lock()
+	defer wsMutex.Unlock()
 
 	data, _ := json.Marshal(message)
 
@@ -72,6 +103,10 @@ func broadcast(message interface{}) {
 	}
 }
 
+//////////////////////////////////////////////////////////////
+// TOKENIZATION HANDLER
+//////////////////////////////////////////////////////////////
+
 func handleTokenize(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
@@ -79,18 +114,30 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var payload map[string]interface{}
+	// Prevent concurrent executions
+	executionMutex.Lock()
+	if isExecuting {
+		executionMutex.Unlock()
+		http.Error(w, "Execution already in progress", http.StatusTooManyRequests)
+		return
+	}
+	isExecuting = true
+	executionMutex.Unlock()
 
+	defer func() {
+		executionMutex.Lock()
+		isExecuting = false
+		executionMutex.Unlock()
+	}()
+
+	var payload map[string]interface{}
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	fmt.Println("📦 Received payload")
-
 	broadcast(map[string]string{"stage": "received"})
 
-	// Marshal inline JSON
 	bodyBytes, err := json.Marshal(payload)
 	if err != nil {
 		http.Error(w, "Failed to encode payload", 500)
@@ -101,12 +148,17 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 
 	start := time.Now()
 
+	fmt.Println("📥 Received payload:")
+	fmt.Println(string(bodyBytes))
+
+	// Execute CRE workflow via CLI
 	cmd := exec.Command(
 		"cre",
 		"workflow",
 		"simulate",
 		"./auto-lock-defi",
 		"--target", "staging-settings",
+		"--broadcast", // REAL TRANSACTION ENABLED
 		"--trigger-index", "0",
 		"--non-interactive",
 		"--http-payload", string(bodyBytes),
@@ -131,6 +183,7 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 	elapsed := time.Since(start)
 	fmt.Println("⏱ Execution time:", elapsed)
 
+	// Extract JSON result from CLI output
 	cleanJSON := extractSimulationJSON(output)
 	if cleanJSON == nil {
 		http.Error(w, "No simulation result found", 500)
@@ -149,9 +202,14 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 	})
 
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(output)
+	json.NewEncoder(w).Encode(result)
 }
 
+//////////////////////////////////////////////////////////////
+// CLI OUTPUT PARSER
+//////////////////////////////////////////////////////////////
+
+// Extracts JSON object from CRE CLI output
 func extractSimulationJSON(output []byte) []byte {
 	str := string(output)
 
@@ -161,9 +219,7 @@ func extractSimulationJSON(output []byte) []byte {
 		return nil
 	}
 
-	// Slice from marker onward
 	sub := str[index:]
-
 	start := strings.Index(sub, "{")
 	end := strings.Index(sub, "}")
 

@@ -17,17 +17,15 @@ import (
 // WEBSOCKET MANAGEMENT
 //////////////////////////////////////////////////////////////
 
-// Allow connections from any origin (development only)
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool { return true },
 }
 
-// Active WebSocket clients
 var clients = make(map[*websocket.Conn]bool)
 var wsMutex sync.Mutex
 
 //////////////////////////////////////////////////////////////
-// EXECUTION LOCK (Prevents multiple simultaneous executions)
+// EXECUTION LOCK
 //////////////////////////////////////////////////////////////
 
 var executionMutex sync.Mutex
@@ -43,14 +41,16 @@ type CREOutput struct {
 }
 
 //////////////////////////////////////////////////////////////
-// MAIN ENTRY POINT
+// MAIN
 //////////////////////////////////////////////////////////////
 
 func main() {
+
 	http.HandleFunc("/tokenize", handleTokenize)
 	http.HandleFunc("/ws", handleWebSocket)
 
 	fmt.Println("🚀 Worker running on :8081")
+
 	log.Fatal(http.ListenAndServe(":8081", nil))
 }
 
@@ -79,7 +79,6 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("❌ WebSocket client disconnected")
 	}()
 
-	// Keep connection alive
 	for {
 		if _, _, err := conn.ReadMessage(); err != nil {
 			break
@@ -91,15 +90,21 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 // BROADCAST FUNCTION
 //////////////////////////////////////////////////////////////
 
-// Sends stage updates to all connected WebSocket clients
 func broadcast(message interface{}) {
+
 	wsMutex.Lock()
 	defer wsMutex.Unlock()
 
 	data, _ := json.Marshal(message)
 
 	for client := range clients {
-		client.WriteMessage(websocket.TextMessage, data)
+
+		err := client.WriteMessage(websocket.TextMessage, data)
+
+		if err != nil {
+			client.Close()
+			delete(clients, client)
+		}
 	}
 }
 
@@ -114,13 +119,14 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Prevent concurrent executions
 	executionMutex.Lock()
+
 	if isExecuting {
 		executionMutex.Unlock()
 		http.Error(w, "Execution already in progress", http.StatusTooManyRequests)
 		return
 	}
+
 	isExecuting = true
 	executionMutex.Unlock()
 
@@ -130,35 +136,76 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 		executionMutex.Unlock()
 	}()
 
+	fmt.Println("🚗 Tokenization request received")
+
 	var payload map[string]interface{}
+
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	broadcast(map[string]string{"stage": "received"})
-
 	bodyBytes, err := json.Marshal(payload)
+
 	if err != nil {
 		http.Error(w, "Failed to encode payload", 500)
 		return
 	}
 
-	broadcast(map[string]string{"stage": "executing_cre"})
+	fmt.Println("📥 Payload:")
+	fmt.Println(string(bodyBytes))
+
+	//////////////////////////////////////////////////////////////
+	// CINEMATIC STAGES
+	//////////////////////////////////////////////////////////////
+
+	broadcast(map[string]string{
+		"stage": "received",
+	})
+
+	time.Sleep(500 * time.Millisecond)
+
+	broadcast(map[string]string{
+		"stage": "verifying_identity",
+	})
+
+	time.Sleep(700 * time.Millisecond)
+
+	broadcast(map[string]string{
+		"stage": "worldid_verified",
+	})
+
+	time.Sleep(500 * time.Millisecond)
+
+	broadcast(map[string]string{
+		"stage": "checking_vehicle_registry",
+	})
+
+	time.Sleep(700 * time.Millisecond)
+
+	broadcast(map[string]string{
+		"stage": "fetching_vehicle_valuation",
+	})
+
+	time.Sleep(700 * time.Millisecond)
+
+	broadcast(map[string]string{
+		"stage": "executing_cre",
+	})
+
+	//////////////////////////////////////////////////////////////
+	// EXECUTE CRE WORKFLOW
+	//////////////////////////////////////////////////////////////
 
 	start := time.Now()
 
-	fmt.Println("📥 Received payload:")
-	fmt.Println(string(bodyBytes))
-
-	// Execute CRE workflow via CLI
 	cmd := exec.Command(
 		"cre",
 		"workflow",
 		"simulate",
 		"./auto-lock-defi",
 		"--target", "staging-settings",
-		"--broadcast", // REAL TRANSACTION ENABLED
+		"--broadcast",
 		"--trigger-index", "0",
 		"--non-interactive",
 		"--http-payload", string(bodyBytes),
@@ -172,34 +219,55 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(string(output))
 
 	if err != nil {
-		broadcast(map[string]string{
-			"stage": "error",
-			"error": string(output),
+
+		broadcast(map[string]interface{}{
+			"stage":   "error",
+			"message": string(output),
 		})
+
 		http.Error(w, string(output), 500)
 		return
 	}
 
 	elapsed := time.Since(start)
+
 	fmt.Println("⏱ Execution time:", elapsed)
 
-	// Extract JSON result from CLI output
+	broadcast(map[string]string{
+		"stage": "minting_nft",
+	})
+
+	time.Sleep(800 * time.Millisecond)
+
+	//////////////////////////////////////////////////////////////
+	// PARSE CRE RESULT
+	//////////////////////////////////////////////////////////////
+
 	cleanJSON := extractSimulationJSON(output)
+
 	if cleanJSON == nil {
 		http.Error(w, "No simulation result found", 500)
 		return
 	}
 
 	var result CREOutput
+
 	if err := json.Unmarshal(cleanJSON, &result); err != nil {
 		http.Error(w, "Failed to parse CRE result", 500)
 		return
 	}
 
+	//////////////////////////////////////////////////////////////
+	// SUCCESS
+	//////////////////////////////////////////////////////////////
+
 	broadcast(map[string]string{
 		"stage":  "success",
 		"txHash": result.TxHash,
 	})
+
+	fmt.Println("✅ Vehicle NFT minted")
+	fmt.Println("🔗 Tx:", result.TxHash)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
@@ -209,17 +277,19 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 // CLI OUTPUT PARSER
 //////////////////////////////////////////////////////////////
 
-// Extracts JSON object from CRE CLI output
 func extractSimulationJSON(output []byte) []byte {
+
 	str := string(output)
 
 	marker := "Workflow Simulation Result:"
 	index := strings.Index(str, marker)
+
 	if index == -1 {
 		return nil
 	}
 
 	sub := str[index:]
+
 	start := strings.Index(sub, "{")
 	end := strings.Index(sub, "}")
 

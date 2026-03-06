@@ -1,9 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { useActiveAccount } from 'thirdweb/react';
-import { Car } from 'lucide-react';
-import VerifyButton from './VerifyButton';
+
+import TokenFormStep from './tokenize/TokenFormStep';
+import TokenProgressStep from './tokenize/TokenProgressStep';
+import TokenSuccessStep from './tokenize/TokenSuccessStep';
+
+type Flow = 'form' | 'progress' | 'success';
 
 export default function TokenizationForm() {
 	const account = useActiveAccount();
@@ -12,37 +17,51 @@ export default function TokenizationForm() {
 	const [plate, setPlate] = useState('');
 	const [renavam, setRenavam] = useState('');
 
+	const [flow, setFlow] = useState<Flow>('form');
+	const [stage, setStage] = useState<string | null>(null);
+	const [txHash, setTxHash] = useState<string | null>(null);
+
+	useEffect(() => {
+		const ws = new WebSocket('ws://localhost:8081/ws');
+
+		ws.onmessage = (event) => {
+			const data = JSON.parse(event.data);
+
+			if (data.stage) {
+				setFlow('progress');
+				setStage(data.stage);
+			}
+
+			if (data.txHash) {
+				setTxHash(data.txHash);
+				setFlow('success');
+			}
+		};
+
+		return () => ws.close();
+	}, []);
+
 	return (
-		<div className="flex justify-center">
-			<div className="w-full max-w-xl bg-white rounded-3xl border border-slate-200 shadow-lg p-12">
-				<div className="flex items-center gap-4 mb-10">
-					<div className="bg-[#1E3A8A] p-3 rounded-2xl">
-						<Car className="text-white" size={28} />
-					</div>
+		<div className="min-h-[80vh] flex items-center justify-center">
+			<AnimatePresence mode="wait">
+				{flow === 'form' && (
+					<motion.div key="form" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}>
+						<TokenFormStep plate={plate} setPlate={setPlate} renavam={renavam} setRenavam={setRenavam} wallet={address!} />
+					</motion.div>
+				)}
 
-					<h2 className="text-3xl font-semibold">Vehicle Tokenization</h2>
-				</div>
+				{flow === 'progress' && (
+					<motion.div key="progress" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+						<TokenProgressStep stage={stage} />
+					</motion.div>
+				)}
 
-				<div className="space-y-6">
-					<input
-						placeholder="License Plate"
-						value={plate}
-						onChange={(e) => setPlate(e.target.value)}
-						className="w-full px-5 py-4 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#1E3A8A]"
-					/>
-
-					<input
-						placeholder="RENAVAM"
-						value={renavam}
-						onChange={(e) => setRenavam(e.target.value)}
-						className="w-full px-5 py-4 rounded-xl border border-slate-300 focus:ring-2 focus:ring-[#1E3A8A]"
-					/>
-				</div>
-
-				<div className="mt-10">
-					<VerifyButton plate={plate} renavam={renavam} wallet={address!} />
-				</div>
-			</div>
+				{flow === 'success' && (
+					<motion.div key="success" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+						<TokenSuccessStep txHash={txHash} />
+					</motion.div>
+				)}
+			</AnimatePresence>
 		</div>
 	);
 }

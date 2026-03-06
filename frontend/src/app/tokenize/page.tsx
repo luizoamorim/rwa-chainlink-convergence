@@ -1,17 +1,21 @@
 'use client';
 
-import TokenizationForm from '@/components/TokenizationForm';
+import TokenizationModal from '@/components/tokenize/TokenizationModal';
 
 export default function TokenizePage() {
 	return (
-		<div className="min-h-screen bg-slate-50 flex items-center justify-center px-6">
-			<div className="max-w-xl w-full">
-				<h1 className="text-3xl font-bold text-center mb-6">Tokenize Your Vehicle</h1>
+		<div className="relative h-[calc(100vh-64px)] w-screen overflow-hidden flex items-center justify-center bg-gradient-to-br from-[#1E3A8A] via-[#1E40AF] to-[#0B132B]">
+			{/* grid background */}
 
-				<p className="text-center text-gray-600 mb-10">Enter your vehicle details and verify your identity to mint the Vehicle NFT.</p>
+			<div
+				className="absolute inset-0 opacity-[0.05]"
+				style={{
+					backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)',
+					backgroundSize: '40px 40px',
+				}}
+			/>
 
-				<TokenizationForm />
-			</div>
+			<TokenizationModal />
 		</div>
 	);
 }

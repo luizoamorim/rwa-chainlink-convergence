@@ -11,12 +11,17 @@ type Props = {
 	plate: string;
 	renavam: string;
 	wallet: string;
+	onStart: () => void;
 };
 
-export default function VerifyButton({ plate, renavam, wallet }: Props) {
+export default function VerifyButton({ plate, renavam, wallet, onStart }: Props) {
 	const [open, setOpen] = useState(false);
 	const [rpContext, setRpContext] = useState<RpContext | null>(null);
 	const [isProcessing, setIsProcessing] = useState(false);
+
+	//////////////////////////////////////////////////////////////
+	// FETCH RP SIGNATURE
+	//////////////////////////////////////////////////////////////
 
 	useEffect(() => {
 		async function fetchSignature() {
@@ -40,9 +45,17 @@ export default function VerifyButton({ plate, renavam, wallet }: Props) {
 		fetchSignature();
 	}, []);
 
+	//////////////////////////////////////////////////////////////
+	// DISABLED STATE
+	//////////////////////////////////////////////////////////////
+
 	if (!rpContext) return null;
 
 	const disabled = isProcessing || !plate || !renavam || !wallet;
+
+	//////////////////////////////////////////////////////////////
+	// UI
+	//////////////////////////////////////////////////////////////
 
 	return (
 		<>
@@ -64,12 +77,24 @@ export default function VerifyButton({ plate, renavam, wallet }: Props) {
 				rp_context={rpContext}
 				environment="staging"
 				allow_legacy_proofs={true}
-				preset={selfieCheckLegacy({ signal: 'vehicle-tokenization' })}
+				preset={selfieCheckLegacy({
+					signal: 'vehicle-tokenization',
+				})}
+				//////////////////////////////////////////////////////////////
+				// HANDLE VERIFY
+				//////////////////////////////////////////////////////////////
+
 				handleVerify={async () => {
 					// Let widget continue
 					return;
 				}}
+				//////////////////////////////////////////////////////////////
+				// SUCCESS
+				//////////////////////////////////////////////////////////////
+
 				onSuccess={async (result: IDKitResult) => {
+					onStart(); // START PIPELINE
+
 					setIsProcessing(true);
 
 					try {
@@ -87,6 +112,10 @@ export default function VerifyButton({ plate, renavam, wallet }: Props) {
 						setIsProcessing(false);
 					}
 				}}
+				//////////////////////////////////////////////////////////////
+				// ERROR
+				//////////////////////////////////////////////////////////////
+
 				onError={(errorCode) => {
 					console.error('IDKit error:', errorCode);
 				}}

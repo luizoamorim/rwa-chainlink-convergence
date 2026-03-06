@@ -262,9 +262,9 @@ func onTokenizationRequest(
 	}
 
 	// 1️⃣ Verify WorldID
-	// if err := verifyWorldID(config, runtime, payload.Proof); err != nil {
-	// 	return nil, err
-	// }
+	if err := verifyWorldID(config, runtime, payload.Proof); err != nil {
+		return nil, err
+	}
 
 	// 2️⃣ Fetch DETRAN
 	detran, err := fetchDetran(config, runtime, payload.Plate)

@@ -7,7 +7,7 @@ use axum::{
 use dotenvy::dotenv;
 use ethers::prelude::*;
 use futures_util::StreamExt;
-use std::{env, net::SocketAddr, sync::Arc};
+use std::{env, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::sync::broadcast;
 
 #[tokio::main]
@@ -17,19 +17,13 @@ async fn main() -> anyhow::Result<()> {
     let ws_rpc = env::var("TENDERLY_WS_URL")?;
     let contract_address: Address = env::var("VEHICLE_NFT_ADDRESS")?.parse()?;
 
-    let ws = Ws::connect(ws_rpc).await?;
-    let provider = Provider::new(ws);
-    let provider = Arc::new(provider);
-
     // Broadcast channel para WebSocket clients
     let (tx, _) = broadcast::channel::<String>(100);
 
     // Spawn listener
-    let provider_clone = provider.clone();
     let tx_clone = tx.clone();
-
     tokio::spawn(async move {
-        listen_events(provider_clone, contract_address, tx_clone).await;
+        run_listener(ws_rpc, contract_address, tx_clone).await;
     });
 
     // WebSocket server
@@ -54,32 +48,89 @@ async fn ws_handler(
     })
 }
 
-async fn listen_events(
-    provider: Arc<Provider<Ws>>,
+//////////////////////////////////////////////////////////////
+// MAIN LISTENER LOOP
+//////////////////////////////////////////////////////////////
+
+async fn run_listener(ws_rpc: String, contract_address: Address, tx: broadcast::Sender<String>) {
+    loop {
+        println!("🔌 Connecting to blockchain...");
+
+        match connect_and_listen(&ws_rpc, contract_address, tx.clone()).await {
+            Ok(_) => {}
+            Err(err) => {
+                println!("⚠ Listener error: {:?}", err);
+            }
+        }
+
+        println!("🔁 Reconnecting in 3 seconds...");
+        tokio::time::sleep(Duration::from_secs(3)).await;
+    }
+}
+
+//////////////////////////////////////////////////////////////
+// CONNECT AND STREAM EVENTS
+//////////////////////////////////////////////////////////////
+
+async fn connect_and_listen(
+    ws_rpc: &str,
     contract_address: Address,
     tx: broadcast::Sender<String>,
-) {
+) -> anyhow::Result<()> {
+    let ws = Ws::connect(ws_rpc).await?;
+    let provider = Provider::new(ws);
+    let provider = Arc::new(provider);
+
     let transfer_topic = H256::from_slice(&ethers::utils::keccak256(
         "Transfer(address,address,uint256)",
     ));
 
+    let zero_topic = H256::from_slice(&[0u8; 32]);
+
     let filter = Filter::new()
         .address(contract_address)
-        .topic0(transfer_topic);
+        .topic0(transfer_topic)
+        .topic1(zero_topic);
 
-    let mut stream = provider.subscribe_logs(&filter).await.unwrap();
+    println!("📜 Checking past mint events...");
 
-    println!("👂 Listening for NFT mint events...");
+    let past_logs = provider.get_logs(&filter).await?;
+
+    for log in past_logs {
+        handle_log(&log, &tx);
+    }
+
+    println!("👂 Listening for new NFT mint events...");
+
+    let mut stream = provider.subscribe_logs(&filter).await?;
 
     while let Some(log) = stream.next().await {
-        let token_id = U256::from_big_endian(log.topics[3].as_bytes());
-
-        let payload = serde_json::json!({
-            "type": "VEHICLE_TOKENIZED",
-            "token_id": token_id,
-            "tx_hash": log.transaction_hash
-        });
-
-        let _ = tx.send(payload.to_string());
+        handle_log(&log, &tx);
     }
+
+    Ok(())
+}
+
+//////////////////////////////////////////////////////////////
+// LOG HANDLER
+//////////////////////////////////////////////////////////////
+
+fn handle_log(log: &Log, tx: &broadcast::Sender<String>) {
+    let Some(topic) = log.topics.get(3) else {
+        return;
+    };
+
+    let token_id = U256::from(topic.0);
+
+    println!("🔥 NFT MINT DETECTED");
+    println!("Token ID: {}", token_id);
+    println!("Tx: {:?}", log.transaction_hash);
+
+    let payload = serde_json::json!({
+        "type": "VEHICLE_TOKENIZED",
+        "token_id": token_id,
+        "tx_hash": log.transaction_hash
+    });
+
+    let _ = tx.send(payload.to_string());
 }

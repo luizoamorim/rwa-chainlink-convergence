@@ -38,9 +38,9 @@ Each setup process is explained in dedicated setup guides.
 
 📖 Please read these first:
 
-* `README_THIRDWEB.md`
-* `README_WORLD_ID.md`
-* `README_TENDERLY.md`
+- 📦 [Thirdweb Setup](README_THIRDWEB.md)
+- 🧑‍🚀 [World ID Setup](README_WORLD_ID.md)
+- ⛓️ [Tenderly Setup](README_TENDERLY.md)
 
 These guides will show how to create accounts, generate keys and configure your environment variables.
 

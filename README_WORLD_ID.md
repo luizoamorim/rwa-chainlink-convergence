@@ -61,12 +61,10 @@ Create a **Team**.
 Example name:
 
 ```
-AutoLock DeFi
+hackthonteam
 ```
 
 You can keep the default configuration.
-
-*(Add image here later)*
 
 ---
 
@@ -79,7 +77,7 @@ Create a new **Application**.
 Suggested name:
 
 ```
-AutoLock Tokenization
+autolocktokenization
 ```
 
 ---
@@ -106,8 +104,8 @@ Copy the following values:
 
 ```
 app_id
-action
-signal
+rp_id
+action_name
 ```
 
 These values will be used in:
@@ -128,10 +126,13 @@ Save this value.
 
 You will use it in the environment variables.
 
+Copy and paste it for both env vars below inside the `.env.local` in the `frontend` project.
+
 Example:
 
 ```
-WORLD_ID_API_KEY=
+NEXT_PUBLIC_WORLD_ID_API_KEY_ALL="0xfcf93..."
+RP_SIGNING_KEY="0xfcf93..."
 ```
 
 ---
@@ -145,7 +146,7 @@ Create your first action.
 Example:
 
 ```
-tokenize-vehicle
+tokenizevehicle
 ```
 
 This action will be referenced when verifying proofs.
@@ -158,6 +159,5 @@ Your World ID integration is now ready.
 
 Continue with:
 
-```
-README_TENDERLY.md
-```
+* ⛓️ [Tenderly Setup](README_TENDERLY.md)
+

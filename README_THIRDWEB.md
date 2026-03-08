@@ -88,5 +88,5 @@ Your Thirdweb integration is now ready.
 
 You can continue with the next setup:
 
-* `README_WORLD_ID.md`
-* `README_TENDERLY.md`
+* 🧑‍🚀 [World ID Setup](README_WORLD_ID.md)
+* ⛓️ [Tenderly Setup](README_TENDERLY.md)

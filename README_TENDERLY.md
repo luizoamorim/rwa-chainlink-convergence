@@ -38,7 +38,7 @@ Use the **Free Trial plan**.
 Example name:
 
 ```
-AutoLock
+hackathonteam
 ```
 
 ---
@@ -52,7 +52,7 @@ Create a new project.
 Example name:
 
 ```
-AutoLock DeFi
+hackthonproject
 ```
 
 ---
@@ -82,6 +82,7 @@ After creating the testnet you will see:
 ```
 Admin RPC (HTTPS)
 Admin RPC (WebSocket)
+Public RPC (Explorer)
 ```
 
 Copy both values.
@@ -92,6 +93,12 @@ Copy both values.
 
 Add the RPC URL to your `.env` file.
 
+⚠️ **IMPORTANT**
+
+For this step you must use the **Admin RPC (HTTPS)**.
+
+The **Admin RPC is private** and allows contract deployment and blockchain writes.
+
 Example:
 
 ```
@@ -101,6 +108,10 @@ TENDERLY_RPC_URL=https://rpc.tenderly.co/...
 ---
 
 # 7. Configure CRE Project
+
+⚠️ **IMPORTANT**
+
+The **CRE workflow also requires the Admin RPC (HTTPS)**.
 
 Open:
 
@@ -115,6 +126,27 @@ Example:
 ```
 rpc_url: https://rpc.tenderly.co/...
 ```
+
+---
+
+## 8. Open the Tenderly Explorer
+
+Add the PUBLIC RPC URL to your `.env.local` file in the `frontend` project.
+
+⚠️ **IMPORTANT**
+
+For this step you must use the **Public RPC URL**, not the Admin RPC.
+
+The Public RPC allows you to access the **Tenderly transaction explorer**.
+
+To get it:
+
+1. Copy the **Public RPC URL**
+2. Paste it into a new browser tab
+3. Open the URL
+4. Copy the **full URL from the browser**
+
+It will look like this: https://dashboard.tenderly.co/...
 
 ---
 

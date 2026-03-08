@@ -16,12 +16,7 @@ The system converts vehicle ownership data into **ERC-721 NFTs**, enabling the c
 
 # 🤝 Technology Stack
 
-<p align="center">
-  <img src="frontend/public/partners/chainlink.svg" height="45"/>
-  <img src="frontend/public/partners/worldid.svg" height="45"/>
-  <img src="frontend/public/partners/thirdweb.svg" height="45"/>
-  <img src="frontend/public/partners/tenderly.svg" height="45"/>
-</p>
+<img width="958" height="133" alt="image" src="https://github.com/user-attachments/assets/02db7bea-b8a7-4e39-9d3c-d43c0c3307bf" />
 
 The platform integrates:
 

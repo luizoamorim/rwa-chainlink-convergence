@@ -238,3 +238,69 @@ Core features:
 * Human verification via World ID
 * Decentralized oracle execution
 * Automated NFT minting
+
+## Flow and Diagram
+
+### E2E Architecture Flow
+
+## System Architecture
+
+```mermaid
+flowchart LR
+
+User[User Wallet<br/>World App + Browser]
+
+FE[Next.js Frontend<br/>Thirdweb + World ID]
+
+API[Tokenization API<br/>Worker Service]
+
+CRE[Chainlink Runtime Environment<br/>Workflow Engine]
+
+Oracle[External APIs<br/>DETRAN + FIPE]
+
+Consumer[VehicleTokenConsumer<br/>Smart Contract]
+
+NFT[VehicleNFT<br/>ERC721 Token]
+
+Chain[(EVM Blockchain<br/>Tenderly Virtual Testnet)]
+
+User --> FE
+FE --> API
+API --> CRE
+CRE --> Oracle
+Oracle --> CRE
+CRE --> Consumer
+Consumer --> NFT
+NFT --> Chain
+```
+
+### CRE Workflow (Trigger → Action → Target)
+
+## CRE Workflow Architecture
+
+```mermaid
+sequenceDiagram
+
+participant FE as Frontend
+participant API as Backend Worker
+participant CRE as Chainlink CRE
+participant Oracle as External APIs
+participant Consumer as Consumer Contract
+participant NFT as VehicleNFT
+
+FE->>API: Tokenization Request<br/>plate + renavam + wallet + worldIdProof
+
+API->>CRE: Trigger Workflow
+
+CRE->>Oracle: Fetch Vehicle Data<br/>DETRAN + FIPE
+
+Oracle-->>CRE: Vehicle Status + Market Value
+
+CRE->>CRE: BFT Consensus<br/>Across DON Nodes
+
+CRE->>Consumer: Send Verified Report
+
+Consumer->>NFT: Mint Vehicle NFT
+
+NFT-->>FE: Vehicle Tokenized
+```

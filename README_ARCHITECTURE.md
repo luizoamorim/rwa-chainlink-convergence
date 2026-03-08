@@ -10,6 +10,7 @@ The protocol integrates multiple layers:
 • backend orchestration  
 • decentralized oracle execution  
 • smart contract settlement  
+• blockchain infrastructure and observability  
 
 The architecture ensures that **vehicle tokenization only occurs when verified real-world data and human identity checks are successfully validated**.
 
@@ -49,6 +50,8 @@ Forwarder Contract
 Consumer Contract
 ↓
 VehicleNFT Contract
+↓
+Tenderly Virtual Testnet
 ```
 
 ---
@@ -76,7 +79,7 @@ Consumer[VehicleTokenConsumer]
 
 NFT[VehicleNFT ERC721]
 
-Chain[(EVM Blockchain<br/>Tenderly Virtual Testnet)]
+Chain[(Tenderly Virtual Testnet<br/>EVM Blockchain)]
 
 User --> FE
 FE --> API
@@ -112,6 +115,8 @@ Oracle network verifies external data
 Verified report sent on-chain
 ↓
 Vehicle NFT minted
+↓
+Transaction executed on Tenderly Virtual Testnet
 ```
 
 ---
@@ -149,6 +154,7 @@ participant Oracle as DETRAN + FIPE APIs
 participant DON as Chainlink DON
 participant Consumer as Consumer Contract
 participant NFT as VehicleNFT
+participant Chain as Tenderly Virtual Testnet
 
 FE->>API: Tokenization Request
 
@@ -169,6 +175,8 @@ DON-->>CRE: Verified Report
 CRE->>Consumer: Send Report
 
 Consumer->>NFT: Mint Vehicle NFT
+
+NFT->>Chain: Transaction executed
 ```
 
 ---
@@ -223,6 +231,33 @@ These values are stored in the NFT metadata.
 
 ---
 
+# ⛓️ Blockchain Infrastructure (Tenderly)
+
+AutoLock DeFi runs on **Tenderly Virtual Testnet**, providing a deterministic EVM environment for development, testing, and blockchain observability.
+
+Tenderly enables:
+
+• deterministic smart contract deployment  
+• transaction simulation before execution  
+• full EVM execution trace debugging  
+• blockchain state inspection  
+• event inspection and log tracing  
+• safe testing of RWA tokenization workflows  
+
+This infrastructure allows developers to safely validate:
+
+- oracle-triggered contract execution
+- cross-contract calls (Forwarder → Consumer → NFT)
+- ERC-721 minting flows
+- gas behavior and opcode traces
+- emitted blockchain events
+
+without interacting with live networks.
+
+Tenderly also allows developers to inspect **opcode-level execution traces**, which is critical for debugging complex oracle-triggered transactions.
+
+---
+
 # 🔐 Security Model
 
 The system protects against several attack vectors.
@@ -265,6 +300,8 @@ Forwarder
 Consumer Contract
 ↓
 VehicleNFT mint
+↓
+Transaction executed on Tenderly Virtual Testnet
 ```
 
 This guarantees that NFTs are only minted from **verified oracle reports**.
@@ -332,6 +369,7 @@ By combining:
 • World ID human verification  
 • Chainlink CRE orchestration  
 • decentralized oracle consensus  
+• deterministic blockchain infrastructure via Tenderly  
 • secure smart contract design  
 
 the protocol enables **trust-minimized tokenization of physical assets on blockchain infrastructure**.

@@ -5,6 +5,8 @@ NEXT_PUBLIC_EVENT_LISTENER="ws://localhost:4000/ws"
 NEXT_PUBLIC_WORLD_ID_API_KEY_ALL=
 NEXT_PUBLIC_WLD_RP_ID=
 RP_SIGNING_KEY=
-# https://sepolia.etherscan.io/tx
 NEXT_PUBLIC_EXPLORER_TX_URL=https://sepolia.etherscan.io/tx
-# NEXT_PUBLIC_EXPLORER_TX_URL=https://dashboard.tenderly.co/explorer/vnet/crehacktest/tx
+# IF TOU DECIDE TO USE TENDERLY VNET, UNCOMMENT THE LINE BELOW AND MAKE SURE TO SET THE EXPLORER URL TO THE CORRECT ONE AND COMMENT THE LINE ABOVE
+# NEXT_PUBLIC_EXPLORER_TX_URL=https://dashboard.tenderly.co/explorer/vnet/YOUR_UUID/tx/
+
+

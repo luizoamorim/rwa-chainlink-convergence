@@ -14,6 +14,13 @@ AutoLock DeFi is a protocol for **tokenizing real-world vehicles as blockchain a
 
 The system converts vehicle ownership data into **ERC-721 NFTs**, enabling the creation of **Real World Assets (RWA)** that can be integrated with decentralized finance.
 
+<p align="center">
+  <img src="frontend/public/partners/chainlink.svg" width="120"/>
+  <img src="frontend/public/partners/worldid.svg" width="120"/>
+  <img src="frontend/public/partners/thirdweb.svg" width="120"/>
+  <img src="frontend/public/partners/tenderly.svg" width="120"/>
+</p>
+
 The platform integrates:
 
 • **Chainlink Runtime Environment (CRE)** for decentralized workflow orchestration  

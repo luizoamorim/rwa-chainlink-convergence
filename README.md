@@ -272,11 +272,21 @@ Services started:
 
 # 🧪 Optional — Run CRE Simulation
 
+⚠️ Judges: For this one please comment this block of code on auto-lock-defi/main.go
+```
+// 1️⃣ Verify WorldID
+// if err := verifyWorldID(config, runtime, payload.Wallet, payload.Proof); err != nil {
+//   return nil, err
+// }
+```
+
 You can validate the RWA workflow with:
 
 ```bash
 make simulate-rwa
 ```
+
+After that you can check the transaction on the explorer.
 
 ---
 

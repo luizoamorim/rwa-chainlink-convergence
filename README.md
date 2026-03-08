@@ -284,6 +284,7 @@ sequenceDiagram
 participant FE as Frontend
 participant API as Backend Worker
 participant CRE as Chainlink CRE
+participant WorldID as World ID API
 participant Oracle as External APIs
 participant Consumer as Consumer Contract
 participant NFT as VehicleNFT
@@ -291,6 +292,10 @@ participant NFT as VehicleNFT
 FE->>API: Tokenization Request<br/>plate + renavam + wallet + worldIdProof
 
 API->>CRE: Trigger Workflow
+
+CRE->>WorldID: Verify Proof
+
+WorldID-->>CRE: Proof Validated
 
 CRE->>Oracle: Fetch Vehicle Data<br/>DETRAN + FIPE
 

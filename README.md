@@ -40,7 +40,7 @@ Smart Contracts
 Detailed architecture documentation:
 
 📖 **System Architecture**  
-➡️ [README_ARCHITECTURE.md](README_ARCHITECTURE.md)
+➡️ [Docs](README_ARCHITECTURE.md)
 
 ---
 
@@ -50,11 +50,12 @@ Each component of the system has its own documentation.
 
 | Component | Documentation |
 |--------|--------|
-| CRE Workflow | [auto-lock-defi/README.md](auto-lock-defi/README.md) |
-| Frontend | [frontend/README_FRONTEND.md](frontend/README_FRONTEND.md) |
-| Worker | [worker/README.md](worker/README.md) |
-| API Mocks | [mocks/README.md](mocks/README.md) |
-| Smart Contracts | [contracts/README.md](contracts/README.md) |
+| CRE Workflow | [docs](auto-lock-defi/README.md) |
+| Frontend | [docs](frontend/README_FRONTEND.md) |
+| Worker | [docs](worker/README.md) |
+| API Mocks | [docs](mocks/README.md) |
+| Smart Contracts | [docs](contracts/README.md) |
+| Event Listener | [docs](event-listener/README.md) |
 
 ---
 
@@ -102,38 +103,172 @@ rwa-chainlink-convergence
 
 ---
 
-# 🚀 Quick Start
+# 🛠 Prerequisites
 
-Clone the repository:
+Before running this project you must install the following tools.
+
+These dependencies are required to build the smart contracts, run the backend services and execute the CRE workflow.
+
+### Go
+
+Used for the **Worker backend service**.
+
+Install guide:  
+https://go.dev/doc/install
+
+---
+
+### Rust
+
+Used for the **event listener service**.
+
+Install using:
 
 ```bash
-git clone https://github.com/<your-repo>
-cd rwa-chainlink-convergence
+curl https://sh.rustup.rs -sSf | sh
 ```
 
-Install dependencies:
+Official documentation:  
+https://www.rust-lang.org/tools/install
+
+---
+
+### Node.js
+
+Used for the **frontend application and JavaScript dependencies**.
+
+Used for this development: **Node v24.10.0+**
+
+Download:  
+https://nodejs.org/
+
+---
+
+### Foundry (Forge)
+
+Used to **compile and deploy the Solidity smart contracts**.
+
+Install:
+
+```bash
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+```
+
+Documentation:  
+https://book.getfoundry.sh/
+
+---
+
+### Chainlink CRE CLI
+
+Used to **run and simulate the Chainlink Runtime Environment workflows**.
+
+Installation instructions:  
+https://docs.chain.link/cre/
+
+---
+
+### Make
+
+Used to run the project automation commands:
+
+```
+make install
+make deploy
+make up
+```
+
+Install guide:  
+https://www.gnu.org/software/make/
+
+---
+
+# ⚙️ Environment Configuration
+
+Before running the project you **must configure the required environment files**.
+
+The system depends on configuration values coming from:
+
+- Thirdweb
+- World ID
+- Tenderly
+
+Create and configure the following files:
+
+```
+.env
+frontend/.env.local
+auto-lock-defi/config.staging.json
+```
+
+These files contain the keys and configuration required for:
+
+• wallet connection  
+• identity verification  
+• CRE workflow execution  
+• blockchain infrastructure  
+
+If you haven't configured the external services yet, please follow the setup guides:
+
+- 📦 [Thirdweb Setup](README_THIRDWEB.md)
+- 🧑‍🚀 [World ID Setup](README_WORLD_ID.md)
+- ⛓️ [Tenderly Setup](README_TENDERLY.md)
+
+---
+
+# 🚀 Install Dependencies
+
+Run:
 
 ```bash
 make install
 ```
 
-Deploy smart contracts:
+This will install:
+
+* Node dependencies
+* Go dependencies
+* Rust dependencies
+* Smart contract build
+* CRE bindings
+
+---
+
+# 🧱 Deploy Smart Contracts
 
 ```bash
 make deploy
 ```
 
-Start the platform:
+This deploys:
+
+* VehicleNFT
+* VehicleTokenConsumer
+* Ownership configuration
+
+---
+
+# ▶️ Start the Platform
+
+Run the full stack:
 
 ```bash
 make up
 ```
 
+Services started:
+
+* Frontend
+* Worker
+* DETRAN mock API
+* Blockchain event listener
+
 ---
 
-# 🧪 Run CRE Simulation
+# 🧪 Optional — Run CRE Simulation
 
-You can manually simulate the RWA workflow:
+You can validate the RWA workflow with:
 
 ```bash
 make simulate-rwa

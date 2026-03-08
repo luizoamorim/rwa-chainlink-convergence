@@ -1,0 +1,10 @@
+NEXT_PUBLIC_THIRDWEB_CLIENT_ID=
+NEXT_PUBLIC_WLD_APP_ID=
+NEXT_PUBLIC_WLD_ACTION=
+NEXT_PUBLIC_EVENT_LISTENER="ws://localhost:4000/ws"
+NEXT_PUBLIC_WORLD_ID_API_KEY_ALL=
+NEXT_PUBLIC_WLD_RP_ID=
+RP_SIGNING_KEY=
+# https://sepolia.etherscan.io/tx
+NEXT_PUBLIC_EXPLORER_TX_URL=https://sepolia.etherscan.io/tx
+# NEXT_PUBLIC_EXPLORER_TX_URL=https://dashboard.tenderly.co/explorer/vnet/crehacktest/tx

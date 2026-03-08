@@ -28,7 +28,6 @@ vendor/
 # CRE artifacts
 auto-lock-defi/dist/
 *.wasm
-project.yaml
 
 # ===============================
 # 🦀 RUST (Event Listener)

@@ -14,7 +14,7 @@ import (
 )
 
 //////////////////////////////////////////////////////////////
-// WEBSOCKET MANAGEMENT
+// WEBSOCKET
 //////////////////////////////////////////////////////////////
 
 var upgrader = websocket.Upgrader{
@@ -55,7 +55,7 @@ func main() {
 }
 
 //////////////////////////////////////////////////////////////
-// WEBSOCKET HANDLER
+// WS HANDLER
 //////////////////////////////////////////////////////////////
 
 func handleWebSocket(w http.ResponseWriter, r *http.Request) {
@@ -69,14 +69,13 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	clients[conn] = true
 	wsMutex.Unlock()
 
-	fmt.Println("🔌 WebSocket client connected")
+	fmt.Println("🔌 WS connected")
 
 	defer func() {
 		wsMutex.Lock()
 		delete(clients, conn)
 		wsMutex.Unlock()
 		conn.Close()
-		fmt.Println("❌ WebSocket client disconnected")
 	}()
 
 	for {
@@ -87,7 +86,7 @@ func handleWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 //////////////////////////////////////////////////////////////
-// BROADCAST FUNCTION
+// BROADCAST
 //////////////////////////////////////////////////////////////
 
 func broadcast(message interface{}) {
@@ -109,7 +108,7 @@ func broadcast(message interface{}) {
 }
 
 //////////////////////////////////////////////////////////////
-// TOKENIZATION HANDLER
+// TOKENIZATION
 //////////////////////////////////////////////////////////////
 
 func handleTokenize(w http.ResponseWriter, r *http.Request) {
@@ -118,6 +117,8 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
+	defer r.Body.Close()
 
 	executionMutex.Lock()
 
@@ -140,36 +141,25 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 
 	var payload map[string]interface{}
 
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+
+	if err := decoder.Decode(&payload); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	bodyBytes, err := json.Marshal(payload)
-
-	if err != nil {
-		http.Error(w, "Failed to encode payload", 500)
-		return
-	}
-
-	fmt.Println("📥 Payload:")
-	fmt.Println(string(bodyBytes))
+	bodyBytes, _ := json.Marshal(payload)
 
 	//////////////////////////////////////////////////////////////
-	// CINEMATIC STAGES
+	// PIPELINE STAGES
 	//////////////////////////////////////////////////////////////
-
-	broadcast(map[string]string{
-		"stage": "received",
-	})
-
-	time.Sleep(500 * time.Millisecond)
 
 	broadcast(map[string]string{
 		"stage": "verifying_identity",
 	})
 
-	time.Sleep(700 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	broadcast(map[string]string{
 		"stage": "worldid_verified",
@@ -181,23 +171,15 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 		"stage": "checking_vehicle_registry",
 	})
 
-	time.Sleep(700 * time.Millisecond)
-
-	broadcast(map[string]string{
-		"stage": "fetching_vehicle_valuation",
-	})
-
-	time.Sleep(700 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	broadcast(map[string]string{
 		"stage": "executing_cre",
 	})
 
 	//////////////////////////////////////////////////////////////
-	// EXECUTE CRE WORKFLOW
+	// RUN CRE
 	//////////////////////////////////////////////////////////////
-
-	start := time.Now()
 
 	cmd := exec.Command(
 		"cre",
@@ -215,66 +197,66 @@ func handleTokenize(w http.ResponseWriter, r *http.Request) {
 
 	output, err := cmd.CombinedOutput()
 
-	fmt.Println("📡 CRE output:")
+	fmt.Println("CRE OUTPUT:")
 	fmt.Println(string(output))
 
 	if err != nil {
 
-		broadcast(map[string]interface{}{
-			"stage":   "error",
-			"message": string(output),
-		})
+		if strings.Contains(string(output), "world id") {
 
-		http.Error(w, string(output), 500)
+			broadcast(map[string]string{
+				"stage": "worldid_failed",
+			})
+
+		} else if strings.Contains(string(output), "vehicle") {
+
+			broadcast(map[string]string{
+				"stage": "oracle_failed",
+			})
+
+		} else {
+
+			broadcast(map[string]string{
+				"stage": "mint_failed",
+			})
+		}
+
+		http.Error(w, string(output), http.StatusInternalServerError)
 		return
 	}
-
-	elapsed := time.Since(start)
-
-	fmt.Println("⏱ Execution time:", elapsed)
 
 	broadcast(map[string]string{
 		"stage": "minting_nft",
 	})
 
-	time.Sleep(800 * time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
-	//////////////////////////////////////////////////////////////
-	// PARSE CRE RESULT
-	//////////////////////////////////////////////////////////////
+	clean := extractSimulationJSON(output)
 
-	cleanJSON := extractSimulationJSON(output)
-
-	if cleanJSON == nil {
-		http.Error(w, "No simulation result found", 500)
+	if clean == nil {
+		http.Error(w, "CRE result not found", http.StatusInternalServerError)
 		return
 	}
 
 	var result CREOutput
 
-	if err := json.Unmarshal(cleanJSON, &result); err != nil {
-		http.Error(w, "Failed to parse CRE result", 500)
+	if err := json.Unmarshal(clean, &result); err != nil {
+		http.Error(w, "Failed parsing result", http.StatusInternalServerError)
 		return
 	}
-
-	//////////////////////////////////////////////////////////////
-	// SUCCESS
-	//////////////////////////////////////////////////////////////
 
 	broadcast(map[string]string{
 		"stage":  "success",
 		"txHash": result.TxHash,
 	})
 
-	fmt.Println("✅ Vehicle NFT minted")
-	fmt.Println("🔗 Tx:", result.TxHash)
+	fmt.Println("✅ NFT minted", result.TxHash)
 
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
 
 //////////////////////////////////////////////////////////////
-// CLI OUTPUT PARSER
+// PARSER
 //////////////////////////////////////////////////////////////
 
 func extractSimulationJSON(output []byte) []byte {

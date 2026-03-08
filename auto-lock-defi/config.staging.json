@@ -2,6 +2,8 @@
   "chainSelector": "ethereum-testnet-sepolia",
   "forwarderAddress": "0x15fC6ae953E024d975e77382eEeC56A9101f9F88",
   "tokenizationContract": "0xd0a8f8ad42f432ef359faef5a1c55168abaf1492",
-  "worldIdAppId": "app_staging_e4d2e0bb45fccdb96b986ae8d3b5d7d6",
-  "detranApiMock": "http://localhost:8080"
+  "worldIdAppId": "app_b68a1f9507b10a9a760117c61904b1e5",
+  "worldIDRpID": "rp_9c6673ea24453505",
+  "detranApiMock": "http://localhost:8080",
+  "actionName": "autorwa"
 }

@@ -23,7 +23,7 @@ import (
 // DEMO NULLIFIER STORAGE
 //////////////////////////////////////////////////////////////
 
-var usedNullifiers = make(map[string]bool)
+// var usedNullifiers = make(map[string]bool)
 
 //////////////////////////////////////////////////////////////
 // CONFIG
@@ -34,6 +34,7 @@ type Config struct {
 	ChainSelector        string `json:"chainSelector"`
 	TokenizationContract string `json:"tokenizationContract"`
 	WorldIDRpID          string `json:"worldIdRpId"`
+	ActionName           string `json:"actionName"`
 }
 
 //////////////////////////////////////////////////////////////
@@ -50,6 +51,7 @@ type WorldIDResponse struct {
 
 type WorldIDProof struct {
 	ProtocolVersion string            `json:"protocol_version"`
+	Nonce           string            `json:"nonce"`
 	Action          string            `json:"action"`
 	Environment     string            `json:"environment"`
 	Responses       []WorldIDResponse `json:"responses"`
@@ -64,6 +66,7 @@ type TokenizationPayload struct {
 	Renavam string       `json:"renavam"`
 	Wallet  string       `json:"wallet"`
 	Proof   WorldIDProof `json:"proof"`
+	Action  string       `json:"action"`
 }
 
 //////////////////////////////////////////////////////////////
@@ -79,27 +82,19 @@ type ExecutionResult struct {
 // WORLD ID VERIFICATION
 //////////////////////////////////////////////////////////////
 
-func verifyWorldID(cfg *Config, runtime cre.Runtime, proof WorldIDProof) error {
+func verifyWorldID(cfg *Config, runtime cre.Runtime, wallet string, proof WorldIDProof) error {
 
 	if len(proof.Responses) == 0 {
-		return fmt.Errorf("no World ID responses found")
+		return fmt.Errorf("no world ID responses found")
 	}
 
-	response := proof.Responses[0]
-
-	if usedNullifiers[response.Nullifier] {
-		return fmt.Errorf("nullifier already used")
+	if proof.Action != cfg.ActionName {
+		return fmt.Errorf("invalid world id action")
 	}
 
-	usedNullifiers[response.Nullifier] = true
+	fmt.Println("🔎 Verifying World Id proof")
 
-	payload := map[string]interface{}{
-		"nullifier":   response.Nullifier,
-		"merkle_root": response.MerkleRoot,
-		"proof":       response.Proof,
-	}
-
-	body, _ := json.Marshal(payload)
+	body, _ := json.Marshal(proof)
 
 	client := &http.Client{}
 
@@ -110,7 +105,10 @@ func verifyWorldID(cfg *Config, runtime cre.Runtime, proof WorldIDProof) error {
 		func(cfg *Config, logger *slog.Logger, requester *http.SendRequester) ([]byte, error) {
 
 			req := &http.Request{
-				Url:    fmt.Sprintf("https://developer.worldcoin.org/api/v4/verify/%s", cfg.WorldIDRpID),
+				Url: fmt.Sprintf(
+					"https://developer.world.org/api/v4/verify/%s",
+					cfg.WorldIDRpID,
+				),
 				Method: "POST",
 				Headers: map[string]string{
 					"Content-Type": "application/json",
@@ -123,12 +121,22 @@ func verifyWorldID(cfg *Config, runtime cre.Runtime, proof WorldIDProof) error {
 				return nil, err
 			}
 
+			if resp.StatusCode != 200 {
+				return nil, fmt.Errorf("world id verification failed")
+			}
+
 			return resp.Body, nil
 		},
 		cre.ConsensusIdenticalAggregation[[]byte](),
 	).Await()
 
-	return err
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("✅ World ID verified")
+
+	return nil
 }
 
 //////////////////////////////////////////////////////////////
@@ -261,8 +269,10 @@ func onTokenizationRequest(
 		return nil, err
 	}
 
+	fmt.Println("🚀 Received tokenization request PAYLOAD:", payload)
+
 	// 1️⃣ Verify WorldID
-	if err := verifyWorldID(config, runtime, payload.Proof); err != nil {
+	if err := verifyWorldID(config, runtime, payload.Wallet, payload.Proof); err != nil {
 		return nil, err
 	}
 

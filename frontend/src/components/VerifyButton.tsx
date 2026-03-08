@@ -1,6 +1,7 @@
 'use client';
 
 import { IDKitRequestWidget, type IDKitResult, type RpContext, selfieCheckLegacy } from '@worldcoin/idkit';
+
 import { useEffect, useState } from 'react';
 
 const APP_ID = process.env.NEXT_PUBLIC_WLD_APP_ID as `app_${string}`;
@@ -45,17 +46,9 @@ export default function VerifyButton({ plate, renavam, wallet, onStart }: Props)
 		fetchSignature();
 	}, []);
 
-	//////////////////////////////////////////////////////////////
-	// DISABLED STATE
-	//////////////////////////////////////////////////////////////
-
 	if (!rpContext) return null;
 
 	const disabled = isProcessing || !plate || !renavam || !wallet;
-
-	//////////////////////////////////////////////////////////////
-	// UI
-	//////////////////////////////////////////////////////////////
 
 	return (
 		<>
@@ -75,42 +68,38 @@ export default function VerifyButton({ plate, renavam, wallet, onStart }: Props)
 				app_id={APP_ID}
 				action={ACTION}
 				rp_context={rpContext}
-				environment="staging"
+				environment="production"
 				allow_legacy_proofs={true}
 				preset={selfieCheckLegacy({
-					signal: 'vehicle-tokenization',
+					signal: wallet,
 				})}
 				//////////////////////////////////////////////////////////////
-				// HANDLE VERIFY
+				// VERIFY (backend verification)
 				//////////////////////////////////////////////////////////////
 
-				handleVerify={async () => {
-					// Let widget continue
-					return;
+				handleVerify={async (result: IDKitResult) => {
+					setOpen(false); // fecha modal imediatamente
+
+					fetch('/api/tokenize', {
+						method: 'POST',
+						headers: { 'content-type': 'application/json' },
+						body: JSON.stringify({
+							plate,
+							renavam,
+							wallet,
+							action: ACTION,
+							proof: result,
+						}),
+					}).catch((err) => {
+						console.error(err);
+					});
 				}}
 				//////////////////////////////////////////////////////////////
 				// SUCCESS
 				//////////////////////////////////////////////////////////////
 
-				onSuccess={async (result: IDKitResult) => {
-					onStart(); // START PIPELINE
-
-					setIsProcessing(true);
-
-					try {
-						await fetch('/api/tokenize', {
-							method: 'POST',
-							headers: { 'content-type': 'application/json' },
-							body: JSON.stringify({
-								plate,
-								renavam,
-								wallet,
-								proof: result,
-							}),
-						});
-					} finally {
-						setIsProcessing(false);
-					}
+				onSuccess={() => {
+					onStart(); // inicia pipeline
 				}}
 				//////////////////////////////////////////////////////////////
 				// ERROR
@@ -118,6 +107,7 @@ export default function VerifyButton({ plate, renavam, wallet, onStart }: Props)
 
 				onError={(errorCode) => {
 					console.error('IDKit error:', errorCode);
+					setIsProcessing(false);
 				}}
 			/>
 		</>

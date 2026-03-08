@@ -21,11 +21,11 @@ Each component of the system has its own documentation.
 
 | Component | Documentation |
 |--------|--------|
-| CRE Workflow | `auto-lock-defi/README.md` |
-| Frontend | `frontend/README_FRONTEND.md` |
-| Worker | `worker/README.md` |
-| External API Mocks | `mocks/README.md` |
-| Smart Contracts | `contracts/README.md` |
+| CRE Workflow | [CRE Workflow](auto-lock-defi/README.md) |
+| Frontend | [Frontend](frontend/README_FRONTEND.md) |
+| Worker | [Worker](worker/README.md) |
+| External API Mocks | [Mocks](mocks/README.md) |
+| Smart Contracts | [Smart Contracts](contracts/README.md) |
 
 These documents explain each subsystem in detail.
 
@@ -279,9 +279,7 @@ User interface responsible for wallet interaction and identity verification.
 
 Documentation:
 
-```
-frontend/README_FRONTEND.md
-```
+[Frontend Documentation](frontend/README_FRONTEND.md)
 
 ---
 
@@ -291,9 +289,7 @@ Backend service responsible for triggering CRE workflows.
 
 Documentation:
 
-```
-worker/README.md
-```
+[Worker Documentation](worker/README.md)
 
 ---
 
@@ -303,9 +299,7 @@ Chainlink workflow responsible for orchestrating verification and oracle executi
 
 Documentation:
 
-```
-auto-lock-defi/README.md
-```
+[CRE Workflow Documentation](auto-lock-defi/README.md)
 
 ---
 
@@ -315,9 +309,7 @@ Mock APIs simulating vehicle registry and pricing services.
 
 Documentation:
 
-```
-mocks/README.md
-```
+[Mocks Documentation](mocks/README.md)
 
 ---
 
@@ -327,9 +319,7 @@ Solidity contracts responsible for NFT minting and settlement.
 
 Documentation:
 
-```
-contracts/README.md
-```
+[Smart Contracts Documentation](contracts/README.md)
 
 ---
 

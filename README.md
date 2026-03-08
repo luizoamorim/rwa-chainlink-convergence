@@ -288,3 +288,63 @@ Core features:
 • human identity verification  
 • decentralized oracle execution  
 • automated NFT minting
+
+---
+
+
+⚠️ Judges: For a complete technical explanation of the system design, please read the architecture documentation:
+
+📖 **System Architecture Guide**
+
+➡️ [README_ARCHITECTURE.md](README_ARCHITECTURE.md)
+
+This document explains in detail:
+
+• the full system architecture  
+• CRE workflow execution  
+• oracle consensus model  
+• smart contract settlement layer  
+• security design of the protocol  
+
+---
+
+# 📚 Development References
+
+These are the main resources used during the development of this project.
+
+## Chainlink CRE
+
+### Project Configuration
+
+https://docs.chain.link/cre/reference/project-configuration-go#checking-your-versions
+
+### Onchain Write Capability
+
+https://docs.chain.link/cre/guides/workflow/using-evm-client/onchain-write/overview-go
+
+### Forwarder Directory
+
+https://docs.chain.link/cre/guides/workflow/using-evm-client/forwarder-directory-go#simulation-mainnets
+
+### Consumer Contract (ReceiverTemplate)
+
+https://docs.chain.link/cre/guides/workflow/using-evm-client/onchain-write/building-consumer-contracts#3-using-receivertemplate
+
+---
+
+## World ID
+
+| Resource | Link |
+|------|------|
+IDKit Integration | https://docs.world.org/world-id/idkit/integrate |
+React Integration | https://docs.world.org/world-id/idkit/react |
+Legacy Credential Presets | https://docs.world.org/world-id/credentials/legacy-presets |
+Authenticator Reference | https://docs.world.org/world-id/reference/authenticator |
+
+---
+
+## thirdweb
+
+Developer Documentation:
+
+https://portal.thirdweb.com/references/typescript/v5

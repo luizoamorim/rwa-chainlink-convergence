@@ -317,7 +317,7 @@ Just do the Tenderly setup. Deploy the contracts and after run the cre simulate.
 
 PUBLIC RPC URL: https://dashboard.tenderly.co/explorer/vnet/82b3418e-e91c-4a75-b537-93303ca9d01c/transactions
 
-# For all Judges
+## For all Judges
 
 ⚠️ Judges: For a complete technical explanation of the system design, please read the architecture documentation:
 

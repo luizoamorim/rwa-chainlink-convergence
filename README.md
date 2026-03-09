@@ -305,6 +305,9 @@ Core features:
 
 ---
 
+# 🎥 Video Record
+[Video Link](https://www.loom.com/share/8424c7c2c93f4a919db1a98094a09a3b)
+
 
 ⚠️ Judges: For a complete technical explanation of the system design, please read the architecture documentation:
 

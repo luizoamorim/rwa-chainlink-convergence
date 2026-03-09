@@ -1,7 +1,7 @@
 staging-settings:
   rpcs:
     - chain-name: ethereum-testnet-sepolia
-      url: https://virtual.rpc.tenderly.co/crehack/cretest/private/crehacktest/01e12c5f-2056-4225-93c3-d91a06820a54
+      url: 
 
 production-settings:
   rpcs:

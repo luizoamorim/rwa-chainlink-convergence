@@ -113,7 +113,9 @@ These values will be used in:
 ```
 auto-lock-defi/config.staging.json
 ```
-
+```
+frontend/.env.local
+```
 ---
 
 # 8. Generate an API Key

@@ -108,11 +108,6 @@ G --> H[Vehicle NFT Mint]
 
 # 🔄 Full Tokenization Flow (Mermaid)
 
-Esse mostra **todo o fluxo desde frontend até o mint**.
-
-```markdown
-# Full Tokenization Flow
-
 ```mermaid
 sequenceDiagram
 

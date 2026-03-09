@@ -1,7 +1,7 @@
 staging-settings:
   rpcs:
     - chain-name: ethereum-testnet-sepolia
-      url: 
+      url: https://virtual.rpc.tenderly.co/TEAM_NAME/PROJECT_NAME/private/YOUR_VNET_NAME/UUID
 
 production-settings:
   rpcs:

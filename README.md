@@ -303,11 +303,21 @@ Core features:
 • decentralized oracle execution  
 • automated NFT minting
 
----
-
-# 🎥 Video Record
+## 🎥 Video Record
 [Video Link](https://www.loom.com/share/8424c7c2c93f4a919db1a98094a09a3b)
 
+## Chainlink Judges
+
+⚠️ If you don't want to run the entire flow with make up.
+Just do the Tenderly setup. Deploy the contracts and after run the cre simulate.
+
+## Tenderly Judges
+
+⚠️ For checking the transactions made in the video:
+
+PUBLIC RPC URL: https://dashboard.tenderly.co/explorer/vnet/82b3418e-e91c-4a75-b537-93303ca9d01c/transactions
+
+# For all Judges
 
 ⚠️ Judges: For a complete technical explanation of the system design, please read the architecture documentation:
 

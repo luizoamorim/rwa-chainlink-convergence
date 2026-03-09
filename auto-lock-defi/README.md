@@ -102,7 +102,7 @@ E --> F[Forwarder Contract]
 F --> G[Consumer Contract]
 
 G --> H[Vehicle NFT Mint]
-
+```
 
 ---
 
@@ -142,6 +142,7 @@ Forwarder->>Consumer: processReport()
 Consumer->>NFT: mintVehicle()
 
 NFT-->>Frontend: NFT Minted
+```
 
 ---
 
